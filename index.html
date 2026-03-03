@@ -5,238 +5,322 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Museum PDF Tool</title>
+    <meta name="description"
+        content="100% offline PDF processing tool for museum magazines. Split, merge and archive PDFs entirely in your browser.">
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4f46e5">
+    <meta name="theme-color" content="#ea580c">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <!-- Tailwind CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <!-- Google Fonts for Modern Look -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';</script>
+    <!-- PDF-Lib -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <!-- JSZip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- FileSaver.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-    <!-- Base CSS inline for speed -->
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05);
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #fff7ed 0%, #ffedd5 50%, #fed7aa 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 40px 80px -16px rgba(234, 88, 12, 0.18), 0 0 0 1px rgba(234, 88, 12, 0.08);
+            max-width: 640px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header-gradient {
+            background: linear-gradient(135deg, #c2410c 0%, #ea580c 45%, #f97316 100%);
+            padding: 28px 32px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-gradient::after {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 50%;
+        }
+
+        .header-gradient::before {
+            content: '';
+            position: absolute;
+            bottom: -70px;
+            left: -20px;
+            width: 220px;
+            height: 220px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 50%;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            padding: 5px 13px;
+            border-radius: 100px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .badge-dot {
+            width: 7px;
+            height: 7px;
+            background: #bbf7d0;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 3px rgba(187, 247, 208, 0.3);
+            animation: pulseDot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseDot {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 3px rgba(187, 247, 208, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 0 5px rgba(187, 247, 208, 0.1);
+            }
+        }
+
+        .form-body {
+            padding: 28px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 800;
+            color: #9a3412;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .hint {
+            font-size: 11px;
+            color: #c4895a;
         }
 
         .input-field {
-            transition: all 0.3s ease;
-            border: 1px solid #e5e7eb;
-            background-color: #f9fafb;
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid #fed7aa;
+            background: #fff7ed;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #1c1917;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         }
 
         .input-field:focus {
-            background-color: #ffffff;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
             outline: none;
+            border-color: #f97316;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.14);
         }
 
-        .gradient-btn {
-            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        .input-field::placeholder {
+            color: #c2a080;
         }
 
-        .gradient-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        .drop-zone {
+            border: 2px dashed #fed7aa;
+            background: #fff7ed;
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: #f97316;
+            background: #fff3e8;
+        }
+
+        .file-icon {
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, #ea580c, #f97316);
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .browse-btn {
+            margin-left: auto;
+            flex-shrink: 0;
+            background: #fff;
+            border: 1.5px solid #fed7aa;
+            color: #ea580c;
+            font-weight: 700;
+            font-size: 12px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .browse-btn:hover {
+            background: #fff7ed;
+            border-color: #f97316;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #fed7aa 30%, #fed7aa 70%, transparent);
+        }
+
+        .process-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #c2410c 0%, #ea580c 50%, #f97316 100%);
+            color: white;
+            font-weight: 800;
+            font-size: 16px;
+            padding: 15px 24px;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.15s, box-shadow 0.15s;
+            letter-spacing: 0.01em;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .process-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 32px -6px rgba(234, 88, 12, 0.45);
+        }
+
+        .process-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .process-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .btn-inner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            position: relative;
+            z-index: 1;
         }
 
         .progress-bar-container {
-            background-color: rgba(255, 255, 255, 0.2);
-            height: 4px;
-            width: 100%;
             position: absolute;
             bottom: 0;
             left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .progress-bar {
             height: 100%;
-            background: #10b981;
-            transition: width 0.3s ease;
+            background: #bbf7d0;
+            transition: width 0.4s ease;
         }
 
-        /* Custom Scrollbar for Terminal */
+        #logArea {
+            background: #18120e;
+            border: 1px solid #2c1d15;
+            border-radius: 14px;
+            color: #fb923c;
+            font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+            font-size: 11.5px;
+            line-height: 1.75;
+            padding: 14px 16px;
+            height: 160px;
+            overflow-y: auto;
+        }
+
         #logArea::-webkit-scrollbar {
-            width: 6px;
+            width: 5px;
         }
 
         #logArea::-webkit-scrollbar-track {
-            background: #1f2937;
+            background: #18120e;
         }
 
         #logArea::-webkit-scrollbar-thumb {
-            background: #4b5563;
+            background: #3c2415;
             border-radius: 4px;
         }
-    </style>
 
-    <!-- PDF.js WebAssembly -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';</script>
+        .result-box {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            border: 1.5px solid #86efac;
+            border-radius: 18px;
+            padding: 22px;
+        }
 
-    <!-- PDF-Lib for modifying PDFs -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-
-    <!-- JSZip for compression -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
-    <!-- FileSaver.js for downloading -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-</head>
-
-<body class="min-h-screen py-10 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-
-    <div class="max-w-3xl w-full glass-panel p-8 rounded-2xl relative overflow-hidden">
-
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">Museum PDF Tool</h1>
-            <p class="mt-2 text-sm text-gray-500 font-medium tracking-wide">
-                <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-2">
-                    <svg class="-ml-0.5 mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
-                        <circle cx="4" cy="4" r="3" />
-                    </svg>
-                    100% Secure & Offline
-                </span>
-                Files never leave your device. Processed locally via WebAssembly.
-            </p>
-            <a href="guide.html" target="_blank"
-                class="text-indigo-600 hover:text-indigo-800 text-sm font-medium underline mt-2 inline-block transition">
-                📖 Open User Guide
-            </a>
-        </div>
-
-        <form id="uploadForm" class="space-y-6">
-            <!-- File Upload Area -->
-            <div
-                class="bg-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-300 transition hover:border-indigo-400">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Source PDF File</label>
-                <input type="file" id="pdf_file" accept=".pdf" required class="block w-full text-sm text-gray-500
-                              file:mr-4 file:py-2.5 file:px-4
-                              file:rounded-full file:border-0
-                              file:text-sm file:font-semibold
-                              file:bg-indigo-50 file:text-indigo-700
-                              hover:file:bg-indigo-100 transition duration-150 cursor-pointer">
-                <div id="pdfPageCount" class="text-indigo-600 text-sm font-semibold mt-3 flex items-center h-5"></div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Year -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Year</label>
-                    <input type="text" id="year" class="input-field rounded-lg w-full py-2.5 px-4 text-gray-800"
-                        placeholder="e.g. 2024" required>
-                </div>
-                <!-- Number -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Issue Number</label>
-                    <input type="text" id="number" class="input-field rounded-lg w-full py-2.5 px-4 text-gray-800"
-                        placeholder="e.g. 05" required>
-                </div>
-            </div>
-
-            <!-- Configuration Ranges -->
-            <div class="space-y-4 pt-2 border-t border-gray-100">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1 flex justify-between">
-                        Page Ranges to Process
-                        <span class="text-xs text-gray-400 font-normal">e.g. 1-3,4,8-10</span>
-                    </label>
-                    <input type="text" id="article_ranges"
-                        class="input-field rounded-lg w-full py-2.5 px-4 text-gray-800"
-                        placeholder="Leave empty to process all pages">
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1 flex justify-between">
-                            Merge Blocks
-                            <span class="text-xs text-gray-400 font-normal">e.g. 1,3</span>
-                        </label>
-                        <input type="text" id="merge_ranges"
-                            class="input-field rounded-lg w-full py-2 px-3 text-gray-800 text-sm"
-                            placeholder="Merge separated blocks into one">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1 flex justify-between">
-                            Exclude Pages
-                            <span class="text-xs text-gray-400 font-normal">e.g. 5,10,12</span>
-                        </label>
-                        <input type="text" id="remove_pages"
-                            class="input-field rounded-lg w-full py-2 px-3 text-gray-800 text-sm"
-                            placeholder="Pages to permanently delete">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Submit Action -->
-            <div class="pt-4">
-                <button type="submit"
-                    class="gradient-btn w-full text-white font-bold py-3.5 px-4 rounded-xl relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-indigo-200">
-                    <span class="relative z-10 flex items-center justify-center text-lg shadow-sm" id="btn-text">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
-                            </path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Process PDF
-                    </span>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" id="progress-bar" style="width: 0%;"></div>
-                    </div>
-                </button>
-            </div>
-        </form>
-
-        <!-- Terminal Output -->
-        <div id="logArea"
-            class="mt-6 p-4 bg-gray-900 border border-gray-800 text-green-400 text-xs rounded-xl hidden h-40 overflow-y-auto font-mono shadow-inner leading-relaxed">
-            <span class="text-gray-500">Museum PDF Tool v2.0 Initialization...</span><br>
-        </div>
-
-        <audio id="notificationSound" src="sound/notification.mp3" preload="auto"></audio>
-
-        <!-- Result Download Menu -->
-        <div id="result" class="mt-6 hidden animate-fade-in-up">
-            <div
-                class="bg-green-50 rounded-xl p-6 border border-green-100 flex flex-col items-center justify-center space-y-4">
-                <div class="flex items-center text-green-700">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span class="font-semibold text-lg">Processing Complete!</span>
-                </div>
-                <div id="downloadLinks" class="w-full"></div>
-                <p class="text-xs text-green-600 text-center">Process completed safely within your hardware.</p>
-            </div>
-        </div>
-
-    </div>
-
-    <style>
         .animate-fade-in-up {
-            animation: fadeInUp 0.5s ease-out forwards;
+            animation: fadeInUp 0.4s ease-out forwards;
         }
 
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(14px);
             }
 
             to {
@@ -245,6 +329,186 @@
             }
         }
     </style>
+</head>
+
+<body>
+    <div class="card">
+
+        <!-- Header -->
+        <div class="header-gradient">
+            <div
+                style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; position:relative; z-index:1;">
+                <div>
+                    <h1 style="font-size:24px; font-weight:800; color:white; letter-spacing:-0.02em; line-height:1.2;">
+                        Museum PDF Tool
+                    </h1>
+                    <p style="color:rgba(255,255,255,0.78); font-size:13px; margin-top:5px;">
+                        Split, merge &amp; archive magazine PDFs — entirely in your browser
+                    </p>
+                </div>
+                <div class="badge">
+                    <span class="badge-dot"></span>
+                    100% Offline &amp; Secure
+                </div>
+            </div>
+            <div
+                style="display:flex; align-items:center; gap:16px; margin-top:16px; position:relative; z-index:1; flex-wrap:wrap;">
+                <a href="guide.html" target="_blank"
+                    style="color:rgba(255,255,255,0.8); font-size:12px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:5px;"
+                    onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,0.8)'">
+                    📖 User Guide
+                </a>
+                <span style="color:rgba(255,255,255,0.25);">·</span>
+                <span style="color:rgba(255,255,255,0.6); font-size:12px;">Files never leave your device</span>
+            </div>
+        </div>
+
+        <!-- Form Body -->
+        <div class="form-body">
+
+            <!-- File Upload -->
+            <div>
+                <div class="section-label">Source PDF File</div>
+                <div class="drop-zone" id="dropZone" onclick="document.getElementById('pdf_file').click()"
+                    ondragover="event.preventDefault(); this.classList.add('dragover')"
+                    ondragleave="this.classList.remove('dragover')"
+                    ondrop="event.preventDefault(); this.classList.remove('dragover'); handleFileDrop(event)">
+                    <div class="file-icon">
+                        <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-weight:600; color:#1c1917; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                            id="fileName">
+                            Click to select or drag &amp; drop a PDF
+                        </div>
+                        <div class="hint" style="margin-top:3px;">Supports all PDF versions · Processed locally</div>
+                    </div>
+                    <button class="browse-btn" type="button">Browse</button>
+                </div>
+                <input type="file" id="pdf_file" accept=".pdf" required onchange="updateFileName(this)">
+                <div id="pdfPageCount"
+                    style="color:#ea580c; font-size:13px; font-weight:600; margin-top:8px; min-height:18px;"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Year + Issue -->
+            <div class="two-col">
+                <div>
+                    <div class="section-label">Year</div>
+                    <input type="text" id="year" class="input-field" placeholder="e.g. 2024" required>
+                </div>
+                <div>
+                    <div class="section-label">Issue Number</div>
+                    <input type="text" id="number" class="input-field" placeholder="e.g. 05" required>
+                </div>
+            </div>
+
+            <!-- Page Ranges -->
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div class="section-label" style="margin-bottom:0;">Page Ranges to Process</div>
+                    <span class="hint">e.g. 1-3,4,8-10</span>
+                </div>
+                <input type="text" id="article_ranges" class="input-field"
+                    placeholder="Leave empty to process all pages">
+            </div>
+
+            <!-- Merge + Exclude -->
+            <div class="two-col">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div class="section-label" style="margin-bottom:0;">Merge Blocks</div>
+                        <span class="hint">e.g. 1,3</span>
+                    </div>
+                    <input type="text" id="merge_ranges" class="input-field" placeholder="Merge separated blocks">
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div class="section-label" style="margin-bottom:0;">Exclude Pages</div>
+                        <span class="hint">e.g. 5,10,12</span>
+                    </div>
+                    <input type="text" id="remove_pages" class="input-field" placeholder="Pages to delete">
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <form id="uploadForm" onsubmit="return false;">
+                <button type="button" id="processBtn" class="process-btn" onclick="handleFormSubmit()">
+                    <span class="btn-inner" id="btn-text">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Process PDF
+                    </span>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progress-bar" style="width:0%;"></div>
+                    </div>
+                </button>
+            </form>
+
+            <!-- Terminal Log -->
+            <div id="logArea" class="hidden">
+                <span style="color:#78716c;">Museum PDF Tool v2.0 — Ready</span><br>
+            </div>
+
+            <!-- Notification sound -->
+            <audio id="notificationSound" src="sound/notification.mp3" preload="auto"></audio>
+
+            <!-- Result -->
+            <div id="result" class="hidden animate-fade-in-up">
+                <div class="result-box">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+                        <div
+                            style="width:34px; height:34px; background:#16a34a; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <svg width="16" height="16" fill="none" stroke="white" stroke-width="2.5"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <span style="font-weight:800; font-size:17px; color:#166534;">Processing Complete!</span>
+                    </div>
+                    <div id="downloadLinks"></div>
+                    <p style="font-size:11.5px; color:#22c55e; margin-top:14px; text-align:center;">
+                        ✓ Processed entirely within your browser — no data was uploaded
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function updateFileName(input) {
+            const name = input.files[0] ? input.files[0].name : 'Click to select or drag & drop a PDF';
+            document.getElementById('fileName').textContent = name;
+        }
+
+        function handleFileDrop(event) {
+            const files = event.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                const dt = new DataTransfer();
+                dt.items.add(files[0]);
+                const input = document.getElementById('pdf_file');
+                input.files = dt.files;
+                updateFileName(input);
+                input.dispatchEvent(new Event('change'));
+            }
+        }
+
+        function handleFormSubmit() {
+            document.getElementById('uploadForm').dispatchEvent(
+                new Event('submit', { bubbles: true, cancelable: true })
+            );
+        }
+    </script>
 
     <!-- Core App Engine -->
     <script src="js/wasm_engine.js"></script>
@@ -254,8 +518,8 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./service-worker.js')
-                    .then(reg => console.log('[PWA] Service Worker registered. Scope:', reg.scope))
-                    .catch(err => console.log('[PWA] Service Worker registration failed:', err));
+                    .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+                    .catch(err => console.log('[PWA] Service Worker failed:', err));
             });
         }
     </script>

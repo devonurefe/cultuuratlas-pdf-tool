@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadLinks = document.getElementById('downloadLinks');
     const btnText = document.getElementById('btn-text');
     const progressBar = document.getElementById('progress-bar');
-    const submitBtn = form.querySelector('button[type="submit"]');
+    const submitBtn = document.getElementById('processBtn') || form.querySelector('button');
 
     let globalPdfBytes = null;
     let totalPdfPages = 0;
