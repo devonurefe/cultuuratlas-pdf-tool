@@ -354,10 +354,154 @@
                 transform: translateY(0);
             }
         }
+
+        /* Dark Mode Toggle */
+        .dark-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1.5px solid #fed7aa;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .dark-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        /* Dark Mode Overrides */
+        body.dark {
+            background: linear-gradient(145deg, #1c1917 0%, #292524 50%, #1c1917 100%);
+        }
+
+        body.dark .card {
+            background: #292524;
+            box-shadow: 0 40px 80px -16px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+        }
+
+        body.dark .header-gradient {
+            background: linear-gradient(135deg, #92400e 0%, #78350f 50%, #451a03 100%);
+        }
+
+        body.dark .header-gradient h1 {
+            color: #fed7aa !important;
+        }
+
+        body.dark .header-gradient p {
+            color: #fdba74 !important;
+        }
+
+        body.dark .badge {
+            background: rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: #fdba74;
+        }
+
+        body.dark .form-body {
+            background: #292524;
+        }
+
+        body.dark .section-label {
+            color: #fb923c;
+        }
+
+        body.dark .hint {
+            color: #a8a29e;
+        }
+
+        body.dark .input-field {
+            background: #1c1917;
+            border-color: #44403c;
+            color: #fafaf9;
+        }
+
+        body.dark .input-field::placeholder {
+            color: #78716c;
+        }
+
+        body.dark .input-field:focus {
+            border-color: #f97316;
+            background: #292524;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+        }
+
+        body.dark .drop-zone {
+            background: #1c1917;
+            border-color: #44403c;
+        }
+
+        body.dark .drop-zone:hover,
+        body.dark .drop-zone.dragover {
+            border-color: #f97316;
+            background: #292524;
+        }
+
+        body.dark #fileName {
+            color: #fafaf9 !important;
+        }
+
+        body.dark .browse-btn {
+            background: #1c1917;
+            border-color: #44403c;
+            color: #fb923c;
+        }
+
+        body.dark .divider {
+            background: linear-gradient(to right, transparent, #44403c 30%, #44403c 70%, transparent);
+        }
+
+        body.dark .card-footer {
+            border-top-color: #44403c;
+            color: #78716c;
+        }
+
+        body.dark .card-footer strong {
+            color: #fb923c;
+        }
+
+        body.dark .dark-toggle {
+            background: rgba(41, 37, 36, 0.9);
+            border-color: #44403c;
+        }
+
+        body.dark .result-box {
+            background: linear-gradient(135deg, #14532d, #166534);
+            border-color: #22c55e;
+        }
+
+        body.dark .result-box span {
+            color: #bbf7d0 !important;
+        }
+
+        body.dark .result-box p {
+            color: #86efac !important;
+        }
+
+        body.dark #pdfPageCount {
+            color: #fb923c !important;
+        }
+
+        body.dark .love-line {
+            color: #57534e !important;
+        }
     </style>
 </head>
 
 <body>
+    <button class="dark-toggle" id="darkToggle" title="Toggle dark mode" onclick="toggleDark()">🌙</button>
+
     <div class="card">
 
         <!-- Header -->
@@ -509,6 +653,9 @@
 
         <div class="card-footer">
             Museum PDF Tool <strong>v2.0</strong> &nbsp;&middot;&nbsp; Powered by <strong>h2O</strong>
+            <div class="love-line" style="margin-top:6px; font-size:10.5px; color:#d4956a;">
+                Made with ❤️ for the community
+            </div>
         </div>
 
     </div>
@@ -535,6 +682,19 @@
             document.getElementById('uploadForm').dispatchEvent(
                 new Event('submit', { bubbles: true, cancelable: true })
             );
+        }
+
+        // Dark Mode
+        function toggleDark() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            document.getElementById('darkToggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('museumDark', isDark ? '1' : '0');
+        }
+        // Restore preference on load
+        if (localStorage.getItem('museumDark') === '1') {
+            document.body.classList.add('dark');
+            document.getElementById('darkToggle').textContent = '☀️';
         }
     </script>
 
