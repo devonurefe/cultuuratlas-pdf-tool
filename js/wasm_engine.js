@@ -227,10 +227,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const outputName = `output${year}${number}.zip`;
             downloadLinks.innerHTML = `
-                <button id="downloadBtn" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded mx-auto block transition duration-300 shadow-lg">
-                    ⬇️ Download (${outputName})
+                <button id="downloadBtn" style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    width: 100%;
+                    background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+                    color: white;
+                    font-weight: 800;
+                    font-size: 16px;
+                    padding: 14px 24px;
+                    border-radius: 14px;
+                    border: none;
+                    cursor: pointer;
+                    font-family: 'Inter', sans-serif;
+                    letter-spacing: 0.01em;
+                    box-shadow: 0 8px 24px -4px rgba(22, 163, 74, 0.4);
+                    transition: transform 0.15s ease, box-shadow 0.15s ease;
+                "
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 14px 32px -4px rgba(22,163,74,0.5)'"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 24px -4px rgba(22,163,74,0.4)'">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Download ${outputName}
                 </button>
             `;
+
 
             document.getElementById('downloadBtn').addEventListener('click', () => {
                 saveAs(content, outputName);
