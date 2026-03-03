@@ -4,8 +4,8 @@
     "description": "Process museum magazine PDFs entirely in your browser — offline and secure.",
     "start_url": "./index.html",
     "display": "standalone",
-    "background_color": "#f3f4f6",
-    "theme_color": "#4f46e5",
+    "background_color": "#fff7ed",
+    "theme_color": "#ea580c",
     "orientation": "portrait-primary",
     "icons": [
         {

@@ -422,13 +422,11 @@
             <div class="two-col">
                 <div>
                     <div class="section-label">Year</div>
-                    <input type="text" inputmode="numeric" pattern="[0-9]*" id="year" class="input-field"
-                        placeholder="e.g. 2024" required>
+                    <input type="text" id="year" class="input-field" placeholder="e.g. 2024" required>
                 </div>
                 <div>
                     <div class="section-label">Issue Number</div>
-                    <input type="text" inputmode="numeric" pattern="[0-9]*" id="number" class="input-field"
-                        placeholder="e.g. 05" required>
+                    <input type="text" id="number" class="input-field" placeholder="e.g. 05" required>
                 </div>
             </div>
 
@@ -543,12 +541,31 @@
     <!-- Core App Engine -->
     <script src="js/wasm_engine.js"></script>
 
-    <!-- PWA Service Worker Registration -->
+    <!-- PWA Service Worker Registration with Auto-Update -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./service-worker.js')
-                    .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+                    .then(reg => {
+                        console.log('[PWA] Service Worker registered:', reg.scope);
+
+                        // Check for updates every 60 seconds
+                        setInterval(() => reg.update(), 60000);
+
+                        // When a new SW is found, auto-activate it
+                        reg.addEventListener('updatefound', () => {
+                            const newWorker = reg.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'activated') {
+                                    // Only reload if there was a previous SW (= this is an update, not first install)
+                                    if (navigator.serviceWorker.controller) {
+                                        console.log('[PWA] New version available — reloading...');
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
                     .catch(err => console.log('[PWA] Service Worker failed:', err));
             });
         }

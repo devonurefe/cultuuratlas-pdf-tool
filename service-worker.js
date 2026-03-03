@@ -1,4 +1,4 @@
-const CACHE_NAME = 'museum-pdf-tool-v3';
+const CACHE_NAME = 'museum-pdf-tool-v4';
 
 // All assets to cache for offline use
 const ASSETS_TO_CACHE = [
@@ -6,12 +6,11 @@ const ASSETS_TO_CACHE = [
     './index.html',
     './guide.html',
     './js/wasm_engine.js',
-    './css/style.css',
     './manifest.json',
     './sound/notification.mp3',
     './icons/icon-192.png',
     './icons/icon-512.png',
-    // CDN Libraries — cached after first load
+    // CDN Libraries
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js',
@@ -21,12 +20,11 @@ const ASSETS_TO_CACHE = [
     'https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap'
 ];
 
-// Install: cache all critical assets (individually so one failure doesn't block all)
+// Install: cache all assets individually (one failure doesn't block others)
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[SW] Installing and caching assets...');
-            // Cache each asset individually so a single CDN failure doesn't break everything
+            console.log('[SW] Installing v4 — caching assets...');
             return Promise.allSettled(
                 ASSETS_TO_CACHE.map(url =>
                     cache.add(url).catch(err => {
@@ -36,29 +34,30 @@ self.addEventListener('install', (event) => {
             );
         })
     );
+    // Activate immediately — don't wait for old tabs to close
     self.skipWaiting();
 });
 
-// Activate: remove old caches
+// Activate: remove old caches and take control of all pages immediately
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('[SW] Removing old cache:', cacheName);
-                        return caches.delete(cacheName);
+                cacheNames.map((name) => {
+                    if (name !== CACHE_NAME) {
+                        console.log('[SW] Removing old cache:', name);
+                        return caches.delete(name);
                     }
                 })
             );
         })
     );
+    // Take control of all open pages immediately (auto-update)
     self.clients.claim();
 });
 
-// Fetch: cache-first, network fallback, then cache any new responses
+// Fetch: cache-first, network fallback, dynamic caching for fonts
 self.addEventListener('fetch', (event) => {
-    // Only handle GET requests
     if (event.request.method !== 'GET') return;
 
     event.respondWith(
@@ -68,7 +67,7 @@ self.addEventListener('fetch', (event) => {
             }
 
             return fetch(event.request).then((networkResponse) => {
-                // Cache dynamic font files and any other successful responses
+                // Dynamically cache font files and CDN resources
                 if (networkResponse && networkResponse.status === 200) {
                     const url = event.request.url;
                     const shouldCache =
@@ -85,11 +84,17 @@ self.addEventListener('fetch', (event) => {
                 }
                 return networkResponse;
             }).catch(() => {
-                // Offline fallback: return index.html for navigation requests
                 if (event.request.mode === 'navigate') {
                     return caches.match('./index.html');
                 }
             });
         })
     );
+});
+
+// Listen for messages from the page (e.g. force update)
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });

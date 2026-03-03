@@ -155,7 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         if (!globalPdfBytes) return alert("Please select a PDF file first");
 
-        btnText.textContent = "Processing... (Do not close tab)";
+        const btnSvg = btnText.innerHTML.match(/<svg[\s\S]*?<\/svg>/) ? btnText.innerHTML.match(/<svg[\s\S]*?<\/svg>/)[0] : '';
+        btnText.innerHTML = btnSvg + ' Processing... (Do not close tab)';
         submitBtn.disabled = true;
         resultDiv.classList.add('hidden');
         logArea.innerHTML = '';
@@ -223,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             progressBar.style.width = '100%';
             logProgress("Process completed successfully!");
 
-            document.getElementById('notificationSound').play();
+            try { document.getElementById('notificationSound').play(); } catch (e) { /* sound blocked by browser */ }
 
             const outputName = `output${year}${number}.zip`;
             downloadLinks.innerHTML = `
@@ -241,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     border-radius: 14px;
                     border: none;
                     cursor: pointer;
-                    font-family: 'Inter', sans-serif;
+                    font-family: 'Nunito', sans-serif;
                     letter-spacing: 0.01em;
                     box-shadow: 0 8px 24px -4px rgba(22, 163, 74, 0.4);
                     transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -266,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logProgress("ERROR: " + e.message);
             alert("Error during processing: " + e.message);
         } finally {
-            btnText.textContent = "Process PDF";
+            btnText.innerHTML = btnSvg + ' Process PDF';
             submitBtn.disabled = false;
         }
     });
