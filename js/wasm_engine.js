@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!globalPdfBytes) return alert("Please select a PDF file first");
 
         const btnSvg = btnText.innerHTML.match(/<svg[\s\S]*?<\/svg>/) ? btnText.innerHTML.match(/<svg[\s\S]*?<\/svg>/)[0] : '';
-        btnText.innerHTML = btnSvg + ' Processing... (Do not close tab)';
+        btnText.innerHTML = btnSvg + '<span style="display:flex; flex-direction:column; align-items:flex-start; line-height:1.2; padding-top:2px;"><span>Processing...</span><span style="font-size:11px; font-weight:600; opacity:0.85;">(Do not close tab)</span></span>';
         submitBtn.disabled = true;
         resultDiv.classList.add('hidden');
         logArea.innerHTML = '';
