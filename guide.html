@@ -5,285 +5,549 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Museum PDF Tool — User Guide</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="description"
+        content="Complete guide for using Museum PDF Tool — offline, on mobile, tablet and desktop.">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        .step-number {
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(145deg, #fff7ed 0%, #ffedd5 60%, #fed7aa 100%);
+            min-height: 100vh;
+            color: #292524;
+            padding: 32px 16px 64px;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 900;
+            color: #7c2d12;
+            letter-spacing: -0.02em;
+        }
+
+        .page-header p {
+            color: #92400e;
+            font-size: 15px;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        .back-link {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4f46e5, #3b82f6);
-            color: white;
+            gap: 6px;
+            color: #ea580c;
+            font-size: 13px;
             font-weight: 700;
-            font-size: 14px;
-            flex-shrink: 0;
+            text-decoration: none;
+            margin-bottom: 28px;
+            transition: color 0.15s;
         }
 
+        .back-link:hover {
+            color: #c2410c;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 24px -4px rgba(234, 88, 12, 0.08), 0 0 0 1px rgba(234, 88, 12, 0.06);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #7c2d12;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title .icon {
+            font-size: 22px;
+        }
+
+        /* Steps */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .step-num {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #ea580c, #f97316);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 13px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .step-content h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1c1917;
+            margin-bottom: 4px;
+        }
+
+        .step-content p,
+        .step-content li {
+            font-size: 14px;
+            color: #57534e;
+            line-height: 1.65;
+        }
+
+        /* Code block */
+        .code-block {
+            background: #1c1917;
+            color: #fb923c;
+            font-family: 'Menlo', 'Monaco', monospace;
+            font-size: 12.5px;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-top: 8px;
+            line-height: 1.7;
+        }
+
+        /* Info/Warn/Success boxes */
         .info-box {
             background: #eff6ff;
             border-left: 4px solid #3b82f6;
+            border-radius: 0 10px 10px 0;
+            padding: 12px 16px;
+            font-size: 13.5px;
+            color: #1e40af;
+            margin-top: 12px;
         }
 
         .warn-box {
             background: #fffbeb;
             border-left: 4px solid #f59e0b;
+            border-radius: 0 10px 10px 0;
+            padding: 12px 16px;
+            font-size: 13.5px;
+            color: #92400e;
+            margin-top: 12px;
         }
 
         .success-box {
-            background: #ecfdf5;
-            border-left: 4px solid #10b981;
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            border-radius: 0 10px 10px 0;
+            padding: 12px 16px;
+            font-size: 13.5px;
+            color: #166534;
+            margin-top: 12px;
+        }
+
+        .orange-box {
+            background: #fff7ed;
+            border-left: 4px solid #f97316;
+            border-radius: 0 10px 10px 0;
+            padding: 12px 16px;
+            font-size: 13.5px;
+            color: #92400e;
+            margin-top: 12px;
+        }
+
+        /* Platform cards */
+        .platform-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 560px) {
+            .platform-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .platform-card {
+            background: #fff7ed;
+            border: 1.5px solid #fed7aa;
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .platform-card h4 {
+            font-size: 14px;
+            font-weight: 800;
+            color: #7c2d12;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .platform-card ol {
+            padding-left: 16px;
+            font-size: 13px;
+            color: #57534e;
+            line-height: 1.7;
+        }
+
+        .platform-card li {
+            margin-bottom: 3px;
+        }
+
+        /* Badge */
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .badge {
+            background: #fff7ed;
+            border: 1.5px solid #fed7aa;
+            color: #92400e;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 100px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge.green {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #166534;
+        }
+
+        /* FAQ */
+        details {
+            background: #fff7ed;
+            border: 1.5px solid #fed7aa;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        details summary {
+            font-weight: 700;
+            font-size: 14px;
+            color: #7c2d12;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        details summary::after {
+            content: '＋';
+            font-size: 16px;
+            color: #ea580c;
+            font-weight: 400;
+        }
+
+        details[open] summary::after {
+            content: '－';
+        }
+
+        details p {
+            font-size: 13.5px;
+            color: #57534e;
+            margin-top: 10px;
+            line-height: 1.65;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 12px;
+            color: #d4956a;
+            font-weight: 600;
+        }
+
+        footer strong {
+            color: #ea580c;
+        }
+
+        strong {
+            font-weight: 800;
+        }
+
+        code {
+            background: #fed7aa;
+            color: #92400e;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
         }
     </style>
 </head>
 
-<body class="bg-gray-50 text-gray-800">
+<body>
+    <div class="container">
 
-    <div class="max-w-3xl mx-auto py-12 px-6">
+        <a href="index.html" class="back-link">
+            ← Back to the Tool
+        </a>
 
         <!-- Header -->
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Museum PDF Tool</h1>
-            <p class="text-lg text-gray-500">User Guide v2.0</p>
-            <div
-                class="mt-4 inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-green-800 text-sm font-medium">
-                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 8 8">
-                    <circle cx="4" cy="4" r="3" />
-                </svg>
-                100% Offline &amp; Secure — No server processing
+        <div class="page-header">
+            <h1>📖 User Guide</h1>
+            <p>Museum PDF Tool v2.0 &mdash; Everything you need to know</p>
+        </div>
+
+        <!-- What is it -->
+        <div class="card">
+            <div class="card-title"><span class="icon">🏛️</span> What is Museum PDF Tool?</div>
+            <p style="font-size:14px; color:#57534e; line-height:1.7;">
+                Museum PDF Tool is a browser-based application for museum staff to process monthly magazine PDFs.
+                It can <strong>split</strong> PDFs into individual articles, <strong>remove</strong> unwanted pages,
+                <strong>merge</strong> article blocks, <strong>extract text</strong>, and generate <strong>thumbnail
+                    images</strong>
+                — all packaged into a downloadable ZIP file.
+            </p>
+            <div class="success-box">
+                <strong>Key advantage:</strong> All processing happens entirely within your browser.
+                Your files are <em>never</em> uploaded to any server. Works offline after the first visit.
             </div>
         </div>
 
-        <!-- What is this tool -->
-        <section class="mb-10">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">What is Museum PDF Tool?</h2>
-            <p class="text-gray-600 leading-relaxed">
-                Museum PDF Tool is a browser-based application designed for museum staff to process monthly magazine
-                PDFs.
-                It can <strong>split</strong> PDFs into individual articles, <strong>remove</strong> advertisement
-                pages,
-                <strong>merge</strong> article blocks, <strong>extract text</strong> (OCR), and generate
-                <strong>thumbnail images</strong> — all packaged into a downloadable ZIP file.
+        <!-- How to Use -->
+        <div class="card">
+            <div class="card-title"><span class="icon">🚀</span> How to Use</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h3>Select Your PDF</h3>
+                        <p>Click the drop zone or <strong>"Browse"</strong> button to select your magazine PDF. You can
+                            also drag & drop the file directly.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h3>Enter Year & Issue Number</h3>
+                        <p>These values are used to name the output files. Example: Year <code>2024</code>, Issue
+                            <code>05</code>.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h3>Define Page Ranges (Articles)</h3>
+                        <p>Specify which pages belong to each article, separated by commas.</p>
+                        <div class="code-block">Example: 1-3,4-6,7,8-10<br>→ Article 1: pages 1–3 | Article 2: pages 4–6
+                            | etc.</div>
+                        <p style="margin-top:6px; font-size:13px; color:#a8a29e;">Leave empty to process the entire PDF
+                            as one block.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <h3>Exclude Pages (Remove Ads)</h3>
+                        <p>List the page numbers of advertisement or unwanted pages.</p>
+                        <div class="code-block">Example: 5,10,12 → Pages 5, 10 and 12 will be excluded.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">5</div>
+                    <div class="step-content">
+                        <h3>Merge Blocks (Optional)</h3>
+                        <p>Enter block numbers to merge two articles into one PDF output.</p>
+                        <div class="code-block">Example: 1,3 → Merges Article Block 1 and Block 3 into a single PDF.
+                        </div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">6</div>
+                    <div class="step-content">
+                        <h3>Press "Process PDF"</h3>
+                        <p>A terminal log appears with live progress. When done, a sound plays and the
+                            <strong>Download</strong> button appears. Click it to save your ZIP.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile & Tablet PWA -->
+        <div class="card">
+            <div class="card-title"><span class="icon">📱</span> Install on Mobile & Tablet (PWA)</div>
+            <p style="font-size:14px; color:#57534e; line-height:1.7; margin-bottom:6px;">
+                You can install this tool as a <strong>standalone app</strong> on your phone or tablet — no app store
+                needed.
+                After installation it works <strong>completely offline</strong>, just like a native app.
             </p>
-            <div class="info-box p-4 rounded-r-lg mt-4">
-                <strong>Key Advantage:</strong> All processing happens entirely within your browser.
-                Your PDF files are <em>never</em> uploaded to any server. The tool works even without an internet
-                connection after the first visit.
+            <div class="success-box" style="margin-top:8px; margin-bottom:16px;">
+                ✅ <strong>Once installed:</strong> Open it from your home screen anytime — even with no internet
+                connection.
             </div>
-        </section>
 
-        <!-- Getting Started -->
-        <section class="mb-10">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">Getting Started</h2>
-
-            <div class="space-y-6">
-                <div class="flex items-start gap-4">
-                    <span class="step-number">1</span>
-                    <div>
-                        <h3 class="font-semibold text-gray-900">Open the Tool</h3>
-                        <p class="text-gray-600 text-sm">Open your web browser (Chrome, Edge, Firefox, or Safari) and
-                            navigate to the Museum PDF Tool URL provided by your organization.</p>
-                    </div>
+            <div class="platform-grid">
+                <div class="platform-card">
+                    <h4>🍎 iPhone & iPad (Safari)</h4>
+                    <ol>
+                        <li>Open <strong>cultuuratlas.nl</strong> in <strong>Safari</strong></li>
+                        <li>Tap the Share button <strong>⬆</strong> at the bottom</li>
+                        <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+                        <li>Tap <strong>"Add"</strong> in the top right corner</li>
+                        <li>The app icon appears on your home screen ✅</li>
+                    </ol>
+                    <div style="margin-top:10px; font-size:12px; color:#92400e; font-weight:600;">⚠️ Must use Safari —
+                        Chrome on iOS does not support PWA install</div>
                 </div>
 
-                <div class="flex items-start gap-4">
-                    <span class="step-number">2</span>
-                    <div>
-                        <h3 class="font-semibold text-gray-900">Select Your PDF</h3>
-                        <p class="text-gray-600 text-sm">Click <strong>"Choose File"</strong> and select the magazine
-                            PDF you want to process. The tool will immediately display the total number of pages.</p>
-                    </div>
+                <div class="platform-card">
+                    <h4>🤖 Android (Chrome)</h4>
+                    <ol>
+                        <li>Open <strong>cultuuratlas.nl</strong> in <strong>Chrome</strong></li>
+                        <li>Tap the three-dot menu <strong>⋮</strong> (top right)</li>
+                        <li>Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></li>
+                        <li>Tap <strong>"Install"</strong> to confirm</li>
+                        <li>The app appears on your home screen ✅</li>
+                    </ol>
+                    <div style="margin-top:10px; font-size:12px; color:#166534; font-weight:600;">💡 A banner may appear
+                        automatically at the bottom of the screen</div>
                 </div>
 
-                <div class="flex items-start gap-4">
-                    <span class="step-number">3</span>
-                    <div>
-                        <h3 class="font-semibold text-gray-900">Fill in Year &amp; Issue Number</h3>
-                        <p class="text-gray-600 text-sm">Enter the publication year (e.g. <code>2024</code>) and issue
-                            number (e.g. <code>05</code>). These are used to generate output filenames.</p>
-                    </div>
+                <div class="platform-card">
+                    <h4>🖥️ Desktop — Chrome / Edge</h4>
+                    <ol>
+                        <li>Open <strong>cultuuratlas.nl</strong> in Chrome or Edge</li>
+                        <li>Click the install icon <strong>⊕</strong> in the address bar (right side)</li>
+                        <li>Click <strong>"Install"</strong></li>
+                        <li>The app opens in its own window ✅</li>
+                    </ol>
+                    <div style="margin-top:10px; font-size:12px; color:#166534; font-weight:600;">💡 Also appears in
+                        Start Menu / Applications folder</div>
                 </div>
 
-                <div class="flex items-start gap-4">
-                    <span class="step-number">4</span>
-                    <div>
-                        <h3 class="font-semibold text-gray-900">Define Page Ranges (Articles)</h3>
-                        <p class="text-gray-600 text-sm">
-                            In the <strong>"Page Ranges to Process"</strong> field, specify which pages belong to each
-                            article. Use commas to separate articles and dashes for page ranges.
-                        </p>
-                        <div class="bg-gray-100 rounded-lg p-3 mt-2 text-sm font-mono">
-                            Example: <strong>1-3,4-6,7,8-10</strong><br>
-                            → Article 1: pages 1–3 | Article 2: pages 4–6 | Article 3: page 7 | Article 4: pages 8–10
-                        </div>
-                        <p class="text-gray-500 text-xs mt-1">Leave empty to process the entire PDF as one block.</p>
-                    </div>
-                </div>
-
-                <div class="flex items-start gap-4">
-                    <span class="step-number">5</span>
-                    <div>
-                        <h3 class="font-semibold text-gray-900">Exclude Pages (Remove Ads)</h3>
-                        <p class="text-gray-600 text-sm">
-                            In the <strong>"Exclude Pages"</strong> field, list the page numbers of advertisement or
-                            unwanted pages. These will be permanently removed from the output.
-                        </p>
-                        <div class="bg-gray-100 rounded-lg p-3 mt-2 text-sm font-mono">
-                            Example: <strong>5,10,12</strong> → Pages 5, 10, and 12 will be excluded from all outputs.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex items-start gap-4">
-                    <span class="step-number">6</span>
-                    <div>
-                        <h3 class="font-semibold text-gray-900">Merge Blocks (Optional)</h3>
-                        <p class="text-gray-600 text-sm">
-                            If two articles should be combined into one, enter their block numbers in <strong>"Merge
-                                Blocks"</strong>.
-                        </p>
-                        <div class="bg-gray-100 rounded-lg p-3 mt-2 text-sm font-mono">
-                            Example: <strong>1,3</strong> → Merges Article Block 1 and Article Block 3 into a single
-                            PDF.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex items-start gap-4">
-                    <span class="step-number">7</span>
-                    <div>
-                        <h3 class="font-semibold text-gray-900">Click "Process PDF"</h3>
-                        <p class="text-gray-600 text-sm">
-                            Press the blue <strong>Process PDF</strong> button. A terminal log will appear showing
-                            real-time progress. When complete, a notification sound plays and a download button appears.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="flex items-start gap-4">
-                    <span class="step-number">8</span>
-                    <div>
-                        <h3 class="font-semibold text-gray-900">Download Your Output</h3>
-                        <p class="text-gray-600 text-sm">Click the <strong>Download</strong> button. A ZIP file will be
-                            saved to your computer with the following folder structure:</p>
-                        <div class="bg-gray-100 rounded-lg p-3 mt-2 text-sm font-mono">
-                            output202405.zip/<br>
-                            ├── pdf/ → Split article PDFs<br>
-                            ├── ocr/ → Extracted text (.txt) files<br>
-                            ├── small/ → Small thumbnail images (500×700)<br>
-                            └── large/ → Large cover images (1024×1280)
-                        </div>
-                    </div>
+                <div class="platform-card">
+                    <h4>🗂️ iPad — Chrome / Edge</h4>
+                    <ol>
+                        <li>Open <strong>cultuuratlas.nl</strong> in Chrome</li>
+                        <li>Tap the three-dot menu <strong>⋮</strong></li>
+                        <li>Tap <strong>"Add to Home Screen"</strong></li>
+                        <li>Confirm and enjoy offline usage ✅</li>
+                    </ol>
+                    <div style="margin-top:10px; font-size:12px; color:#92400e; font-weight:600;">💡 For best results on
+                        iPad, use Chrome — Safari also works</div>
                 </div>
             </div>
-        </section>
 
-        <!-- Install as Desktop App -->
-        <section class="mb-10">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">📱 Install as Desktop App (Recommended)</h2>
-            <p class="text-gray-600 leading-relaxed mb-4">
-                You can install Museum PDF Tool as a standalone desktop application. This gives you a dedicated app
-                window (without browser tabs) and <strong>guarantees offline access forever</strong>.
+            <div class="warn-box" style="margin-top:16px;">
+                <strong>⚠️ Important:</strong> The <strong>first time</strong> you open the app, an internet connection
+                is required so all libraries can be downloaded and cached.
+                After that first visit, the tool works <strong>100% offline</strong> — even if you install it on your
+                home screen later.
+            </div>
+        </div>
+
+        <!-- Offline -->
+        <div class="card">
+            <div class="card-title"><span class="icon">🔌</span> Offline Usage</div>
+            <p style="font-size:14px; color:#57534e; line-height:1.7;">
+                After your first visit, all files are cached in your browser's storage. This includes the HTML,
+                JavaScript PDF libraries, fonts, and icons.
             </p>
-
-            <div class="success-box p-4 rounded-r-lg mb-4">
-                <strong>After installing, you can use the tool even without any internet connection — just like a native
-                    desktop program.</strong>
+            <div class="success-box">
+                You can then: disconnect from the internet → open the tool (or the installed app) → process PDFs →
+                download results. All without any internet!
             </div>
-
-            <h3 class="font-semibold text-gray-900 mb-2">Chrome / Edge:</h3>
-            <ol class="list-decimal list-inside text-gray-600 text-sm space-y-2 ml-2 mb-4">
-                <li>Open the Museum PDF Tool in your browser.</li>
-                <li>Look for the <strong>install icon</strong> (⊕ or a small monitor icon) in the right side of the
-                    address bar.</li>
-                <li>Click it and select <strong>"Install"</strong>.</li>
-                <li>The app will appear on your desktop and in your Start Menu / Applications folder.</li>
-                <li>Open it anytime — it works without internet!</li>
-            </ol>
-
-            <h3 class="font-semibold text-gray-900 mb-2">Firefox / Safari:</h3>
-            <p class="text-gray-600 text-sm">
-                These browsers do not support PWA app installation, but you can still use the tool normally in the
-                browser tab. It will still work offline after the first visit as long as you don't clear your browser
-                cache.
-            </p>
-        </section>
-
-        <!-- Offline Usage -->
-        <section class="mb-10">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">🔌 Offline Usage</h2>
-            <div class="info-box p-4 rounded-r-lg">
-                <p class="text-sm text-gray-700">
-                    After visiting the tool once, all required libraries are cached in your browser. You can then:
-                </p>
-                <ul class="list-disc list-inside text-sm text-gray-700 mt-2 space-y-1">
-                    <li>Disconnect from the internet</li>
-                    <li>Open the tool URL (or the installed desktop app)</li>
-                    <li>Process PDFs of <em>any size</em> — entirely on your own computer</li>
-                    <li>Download results directly to your machine</li>
-                </ul>
+            <div class="warn-box">
+                <strong>⚠️ Note:</strong> If you manually clear "All browser data / cookies and cache" in your browser
+                settings, the offline files will be removed.
+                Simply visit <strong>cultuuratlas.nl</strong> once with internet to restore them.
             </div>
-            <div class="warn-box p-4 rounded-r-lg mt-4">
-                <strong>⚠️ Note:</strong> If you manually clear all browser data ("Clear cache and cookies"), the
-                offline files will be removed. Simply revisit the URL once with internet to restore offline capability.
-            </div>
-        </section>
+        </div>
 
         <!-- Supported Browsers -->
-        <section class="mb-10">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">🌐 Supported Browsers</h2>
-            <div class="grid grid-cols-2 gap-3 text-sm">
-                <div class="bg-white p-3 rounded-lg border border-gray-200 flex items-center gap-2">✅ Google Chrome
-                </div>
-                <div class="bg-white p-3 rounded-lg border border-gray-200 flex items-center gap-2">✅ Microsoft Edge
-                </div>
-                <div class="bg-white p-3 rounded-lg border border-gray-200 flex items-center gap-2">✅ Mozilla Firefox
-                </div>
-                <div class="bg-white p-3 rounded-lg border border-gray-200 flex items-center gap-2">✅ Safari (macOS/iOS)
-                </div>
-                <div class="bg-white p-3 rounded-lg border border-gray-200 flex items-center gap-2">✅ Opera / Brave
-                </div>
-                <div class="bg-white p-3 rounded-lg border border-gray-200 flex items-center gap-2">✅ Samsung Internet
-                </div>
+        <div class="card">
+            <div class="card-title"><span class="icon">🌐</span> Supported Browsers</div>
+            <div class="badge-row">
+                <span class="badge green">✅ Chrome (Desktop & Android)</span>
+                <span class="badge green">✅ Edge (Desktop)</span>
+                <span class="badge green">✅ Safari (iPhone, iPad, Mac)</span>
+                <span class="badge green">✅ Firefox (Desktop)</span>
+                <span class="badge green">✅ Samsung Internet</span>
+                <span class="badge green">✅ Opera / Brave</span>
             </div>
-        </section>
+            <div class="info-box" style="margin-top:14px;">
+                <strong>PWA install support:</strong> Best on Chrome (Android/Desktop) and Safari (iPhone/iPad). Firefox
+                does not support PWA install but the tool still works offline in the browser tab.
+            </div>
+        </div>
 
         <!-- FAQ -->
-        <section class="mb-10">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">❓ FAQ</h2>
-            <div class="space-y-4">
-                <details class="bg-white rounded-lg border border-gray-200 p-4 cursor-pointer">
-                    <summary class="font-semibold text-gray-900">Is my PDF data safe?</summary>
-                    <p class="text-gray-600 text-sm mt-2">Yes. Your files never leave your computer. All processing is
-                        done locally in your browser's memory. No data is sent to any server.</p>
-                </details>
-                <details class="bg-white rounded-lg border border-gray-200 p-4 cursor-pointer">
-                    <summary class="font-semibold text-gray-900">Is there a file size limit?</summary>
-                    <p class="text-gray-600 text-sm mt-2">There is no server-imposed limit. The only limit is your
-                        computer's available RAM. Most modern computers can handle PDFs up to 500MB+ without issues.</p>
-                </details>
-                <details class="bg-white rounded-lg border border-gray-200 p-4 cursor-pointer">
-                    <summary class="font-semibold text-gray-900">Do I need to install any software?</summary>
-                    <p class="text-gray-600 text-sm mt-2">No. You only need a modern web browser. No Python, Tesseract,
-                        or any other software is required.</p>
-                </details>
-                <details class="bg-white rounded-lg border border-gray-200 p-4 cursor-pointer">
-                    <summary class="font-semibold text-gray-900">Can I use this on multiple computers?</summary>
-                    <p class="text-gray-600 text-sm mt-2">Yes. Simply open the URL on each computer once. The tool will
-                        cache itself automatically for offline use on every device.</p>
-                </details>
-            </div>
-        </section>
+        <div class="card">
+            <div class="card-title"><span class="icon">❓</span> FAQ</div>
+            <details>
+                <summary>Is my PDF data safe?</summary>
+                <p>Yes. Your files never leave your device. All processing happens locally in your browser's memory
+                    using WebAssembly. No data is sent to any server.</p>
+            </details>
+            <details>
+                <summary>Is there a file size limit?</summary>
+                <p>There is no server-imposed limit. The only limit is your device's available RAM. Most modern
+                    computers and tablets handle PDFs up to 200–500MB without issues.</p>
+            </details>
+            <details>
+                <summary>Do I need to install any software?</summary>
+                <p>No. You only need a modern web browser. No Python, Tesseract, app store download, or any other
+                    software is required.</p>
+            </details>
+            <details>
+                <summary>Can I use this on multiple devices?</summary>
+                <p>Yes. Open cultuuratlas.nl on each device once with internet. The tool caches itself automatically for
+                    offline use on every device — phone, tablet, laptop, desktop.</p>
+            </details>
+            <details>
+                <summary>Why isn't the sound playing offline?</summary>
+                <p>The notification sound requires a user interaction (like clicking a button) before browsers allow
+                    audio to play — this is a browser security rule, not a bug. As long as you clicked "Process PDF",
+                    the sound will play even offline.</p>
+            </details>
+        </div>
 
-        <!-- Footer -->
-        <footer class="text-center text-gray-400 text-xs pt-8 border-t border-gray-200">
-            <p>Museum PDF Tool v2.0 — Powered by <strong>h2O</strong></p>
+        <footer>
+            Museum PDF Tool <strong>v2.0</strong> &nbsp;·&nbsp; Powered by <strong>h2O</strong>
         </footer>
 
     </div>
