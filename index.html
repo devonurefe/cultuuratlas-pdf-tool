@@ -23,8 +23,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- FileSaver.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <!-- Tesseract.js v6 (real OCR engine, runs fully in-browser via WASM) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/6.0.1/tesseract.min.js"></script>
 
     <style>
         *,
@@ -687,25 +685,6 @@
                 </div>
             </div>
 
-            <!-- OCR Engine -->
-            <div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <div class="section-label" style="margin-bottom:0;">OCR Engine</div>
-                    <span class="hint">Re-reads scanned pages with Tesseract</span>
-                </div>
-                <select id="ocr_engine" class="input-field">
-                    <option value="tesseract_nld" selected>Tesseract — Dutch (recommended)</option>
-                    <option value="tesseract_nld_eng">Tesseract — Dutch + English</option>
-                    <option value="tesseract_eng">Tesseract — English</option>
-                    <option value="pdfjs">Embedded PDF text only (fastest, no OCR)</option>
-                </select>
-                <div class="hint" style="margin-top:6px;">
-                    Tesseract re-OCRs each page from the rendered image, so it bypasses garbled
-                    text already stored inside the PDF. The first run downloads a small language
-                    model (~10–15&nbsp;MB) which is then cached for offline use.
-                </div>
-            </div>
-
             <!-- OCR Cleanup Toggle -->
             <div>
                 <div class="section-label">OCR Text Cleanup</div>
@@ -714,9 +693,11 @@
                     <span class="ocr-toggle-text">
                         <span class="ocr-toggle-title">Clean extracted text automatically</span>
                         <span class="ocr-toggle-hint">
-                            Final tidy-up after OCR: repairs any leftover mojibake,
-                            joins broken hyphenation, collapses double spaces and starts
-                            a new line after each sentence.
+                            Repairs mojibake (â€œ → "),
+                            random capitals (vaN → van),
+                            broken hyphenation (ge- makkelijk → gemakkelijk),
+                            double spaces, and starts a new line after each sentence.
+                            Runs instantly &mdash; no extra downloads, no extra processing time.
                         </span>
                     </span>
                 </label>
