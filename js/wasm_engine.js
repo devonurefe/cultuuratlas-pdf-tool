@@ -256,11 +256,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return out.trim() + '\n';
     }
 
-    // Extract Text natively without Tesseract (Matches Python PyPDF2 logic).
+    // pdf.js 3.x transfers the underlying ArrayBuffer to its worker, which
+    // detaches it for any subsequent caller. We therefore hand pdf.js a
+    // disposable copy every time so the caller's bytes stay reusable.
+    function copyBytes(src) {
+        const out = new Uint8Array(src.byteLength);
+        out.set(src);
+        return out;
+    }
+
+    // Extract Text natively (matches the original Python PyPDF2 logic).
     // Uses the Y-coordinate of each text item (transform[5]) to detect line
-    // breaks, since pdf.js 2.10 does not expose `hasEOL` on text items.
+    // breaks, since pdf.js does not expose `hasEOL` consistently across
+    // versions.
     async function extractTextFromPdf(pdfBytes, { clean = true } = {}) {
-        const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
+        const loadingTask = pdfjsLib.getDocument({ data: copyBytes(pdfBytes) });
         const pdf = await loadingTask.promise;
         let fullText = "";
         for (let i = 1; i <= pdf.numPages; i++) {
@@ -289,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // PDF.js Render Page as Image (Matches Python PIL dimensions)
     async function renderScaledImages(pdfBytes, pageNumber) {
-        const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
+        const loadingTask = pdfjsLib.getDocument({ data: copyBytes(pdfBytes) });
         const pdf = await loadingTask.promise;
         const page = await pdf.getPage(pageNumber);
 
