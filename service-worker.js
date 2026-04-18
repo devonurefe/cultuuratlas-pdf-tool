@@ -1,4 +1,4 @@
-const CACHE_NAME = 'museum-pdf-tool-v5';
+const CACHE_NAME = 'museum-pdf-tool-v6';
 
 // All assets to cache for offline use
 const ASSETS_TO_CACHE = [
@@ -16,6 +16,7 @@ const ASSETS_TO_CACHE = [
     'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/6.0.1/tesseract.min.js',
     // Google Fonts CSS
     'https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap'
 ];
@@ -24,7 +25,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[SW] Installing v5 — caching assets...');
+            console.log('[SW] Installing v6 — caching assets...');
             return Promise.allSettled(
                 ASSETS_TO_CACHE.map(url =>
                     cache.add(url).catch(err => {
@@ -73,7 +74,10 @@ self.addEventListener('fetch', (event) => {
                     const shouldCache =
                         url.includes('fonts.gstatic.com') ||
                         url.includes('fonts.googleapis.com') ||
-                        url.includes('cdnjs.cloudflare.com');
+                        url.includes('cdnjs.cloudflare.com') ||
+                        url.includes('unpkg.com/tesseract') ||
+                        url.includes('tessdata.projectnaptha.com') ||
+                        url.includes('tesseract.projectnaptha.com');
 
                     if (shouldCache) {
                         const responseClone = networkResponse.clone();

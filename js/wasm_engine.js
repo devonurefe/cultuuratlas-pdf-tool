@@ -252,6 +252,62 @@ document.addEventListener('DOMContentLoaded', () => {
         return clean ? cleanOcrText(fullText) : fullText;
     }
 
+    // ──────────────────────────────────────────────────────────────────────
+    //  TESSERACT.js v6  —  REAL OCR PIPELINE
+    //  Renders each PDF page to a high-DPI canvas and feeds it to Tesseract.
+    //  This bypasses any garbled embedded text already stored inside the PDF
+    //  and produces a fresh, modern OCR pass with proper Unicode output.
+    //  The worker is created ONCE per processing run and terminated at the
+    //  end so the WASM core and language model only download a single time.
+    // ──────────────────────────────────────────────────────────────────────
+
+    function tesseractAvailable() {
+        return typeof Tesseract !== 'undefined' && typeof Tesseract.createWorker === 'function';
+    }
+
+    async function createTesseractWorker(langs, onLog) {
+        if (!tesseractAvailable()) {
+            throw new Error("Tesseract.js failed to load. Check your internet connection or use the 'Embedded PDF text only' engine.");
+        }
+        const langArg = Array.isArray(langs) ? langs : [langs];
+        const worker = await Tesseract.createWorker(langArg, 1, {
+            logger: (m) => {
+                if (onLog && m && m.status) onLog(m);
+            }
+        });
+        return worker;
+    }
+
+    // Render one PDF page to an offscreen canvas at a print-quality DPI for OCR.
+    async function renderPageForOcr(pdf, pageNumber, scale = 2.5) {
+        const page = await pdf.getPage(pageNumber);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        return canvas;
+    }
+
+    async function extractTextWithTesseract(pdfBytes, worker, onPageLog) {
+        const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
+        const pdf = await loadingTask.promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+            if (onPageLog) onPageLog(i, pdf.numPages);
+            const canvas = await renderPageForOcr(pdf, i, 2.5);
+            const result = await worker.recognize(canvas);
+            const pageText = (result && result.data && result.data.text) ? result.data.text : "";
+            fullText += pageText.trimEnd() + "\n\n";
+            canvas.width = 0;
+            canvas.height = 0;
+        }
+        return fullText;
+    }
+
     // PDF.js Render Page as Image (Matches Python PIL dimensions)
     async function renderScaledImages(pdfBytes, pageNumber) {
         const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
@@ -302,6 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         logProgress("System initialized...");
 
+        let tesseractWorker = null;
         try {
             const year = document.getElementById('year').value;
             const number = document.getElementById('number').value;
@@ -310,6 +367,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const pRemoveStr = document.getElementById('remove_pages').value;
             const cleanOcrCheckbox = document.getElementById('clean_ocr');
             const cleanOcr = cleanOcrCheckbox ? cleanOcrCheckbox.checked : true;
+            const ocrEngineSelect = document.getElementById('ocr_engine');
+            const ocrEngine = ocrEngineSelect ? ocrEngineSelect.value : 'tesseract_nld';
 
             // Parsers
             let articleRanges = parseRanges(pRangesStr, totalPdfPages);
@@ -321,6 +380,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const originalDoc = await PDFDocument.load(globalPdfBytes);
 
             progressBar.style.width = '30%';
+
+            const ocrLangMap = {
+                tesseract_nld: ['nld'],
+                tesseract_nld_eng: ['nld', 'eng'],
+                tesseract_eng: ['eng']
+            };
+            if (ocrEngine !== 'pdfjs') {
+                const langs = ocrLangMap[ocrEngine] || ['nld'];
+                logProgress(`Loading Tesseract OCR engine (language: ${langs.join('+')}). First run may download ~10–15 MB...`);
+                let lastStatus = '';
+                tesseractWorker = await createTesseractWorker(langs, (m) => {
+                    const stamp = `${m.status}${typeof m.progress === 'number' ? ' ' + Math.round(m.progress * 100) + '%' : ''}`;
+                    if (stamp !== lastStatus && (m.status || '').indexOf('recognizing text') === -1) {
+                        lastStatus = stamp;
+                        logProgress(`  [Tesseract] ${stamp}`);
+                    }
+                });
+                logProgress("Tesseract OCR engine ready.");
+            } else {
+                logProgress("Using embedded PDF text extraction (no OCR).");
+            }
 
             for (let i = 0; i < articleRanges.length; i++) {
                 const range = articleRanges[i];
@@ -349,9 +429,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 zip.file(`output${year}${number}/small/${baseName}.jpg`, small, { base64: true });
                 zip.file(`output${year}${number}/large/${baseName}.jpg`, large, { base64: true });
 
-                // Extract Text (PyPDF2 mapping)
-                logProgress(`  -> Extracting raw text from PDF${cleanOcr ? ' (with OCR cleanup)' : ''}...`);
-                const extractedText = await extractTextFromPdf(newPdfBytes, { clean: cleanOcr });
+                let extractedText;
+                if (tesseractWorker) {
+                    logProgress(`  -> Running Tesseract OCR on ${pagesToCopy.length} page(s)...`);
+                    extractedText = await extractTextWithTesseract(newPdfBytes, tesseractWorker, (n, total) => {
+                        logProgress(`     · OCR page ${n}/${total}`);
+                    });
+                    if (cleanOcr) extractedText = cleanOcrText(extractedText);
+                } else {
+                    logProgress(`  -> Extracting embedded PDF text${cleanOcr ? ' (with cleanup)' : ''}...`);
+                    extractedText = await extractTextFromPdf(newPdfBytes, { clean: cleanOcr });
+                }
                 zip.file(`output${year}${number}/ocr/${baseName}.txt`, extractedText);
             }
 
@@ -406,6 +494,14 @@ document.addEventListener('DOMContentLoaded', () => {
             logProgress("ERROR: " + e.message);
             alert("Error during processing: " + e.message);
         } finally {
+            if (tesseractWorker) {
+                try {
+                    await tesseractWorker.terminate();
+                    logProgress("Tesseract OCR worker terminated.");
+                } catch (termErr) {
+                    console.warn("Tesseract worker termination failed:", termErr);
+                }
+            }
             btnText.innerHTML = btnSvg + ' Process PDF';
             submitBtn.disabled = false;
         }
