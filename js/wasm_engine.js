@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return out;
     }
 
-    // Step 2 — Re-join words that were hyphenated across a line break.
+    // Step 3 — Re-join words that were hyphenated across a line break.
     // Only joins when the hyphen sits between two lowercase letters, so
     // legitimate compounds (e.g. "Klein-Brabant", "e-mail") survive.
     const LC = 'a-zàáâãäåæçèéêëìíîïñòóôõöøùúûüýÿœß';
@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return out;
     }
 
-    // Step 3 — Lowercase uppercase letters that appear mid-word right after
+    // Step 4 — Lowercase uppercase letters that appear mid-word right after
     // a lowercase letter. Iterates until no more replacements (handles
     // chains like "laNGduriG" → "langdurig").
     function fixInnerCaps(text) {
@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return cur;
     }
 
-    // Step 4 — Collapse runs of horizontal whitespace into a single space,
+    // Step 5 — Collapse runs of horizontal whitespace into a single space,
     // but preserve newlines.
     function collapseSpaces(text) {
         return text
@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/\n[\u00A0\t \f\v]+/g, '\n');
     }
 
-    // Step 5 — Insert a newline after sentence-ending punctuation when the
+    // Step 6 — Insert a newline after sentence-ending punctuation when the
     // next sentence starts with an uppercase letter. The character before
     // the punctuation must be a lowercase letter or digit so that initials
     // (B.V., P.O., F.C.) are left intact.
