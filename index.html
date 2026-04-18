@@ -253,6 +253,69 @@
             background: linear-gradient(to right, transparent, #e2e8f0 30%, #e2e8f0 70%, transparent);
         }
 
+        .ocr-toggle {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .ocr-toggle:hover {
+            border-color: #f97316;
+            background: #fff7ed;
+        }
+
+        .ocr-toggle input[type="checkbox"] {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            accent-color: #ea580c;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .ocr-toggle-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            line-height: 1.4;
+        }
+
+        .ocr-toggle-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #1c1917;
+        }
+
+        .ocr-toggle-hint {
+            font-size: 11.5px;
+            color: #64748b;
+        }
+
+        body.dark .ocr-toggle {
+            background: #1c1917;
+            border-color: #44403c;
+        }
+
+        body.dark .ocr-toggle:hover {
+            border-color: #f97316;
+            background: #292524;
+        }
+
+        body.dark .ocr-toggle-title {
+            color: #fafaf9;
+        }
+
+        body.dark .ocr-toggle-hint {
+            color: #a8a29e;
+        }
+
         .process-btn {
             width: 100%;
             background: linear-gradient(135deg, #c2410c 0%, #ea580c 50%, #f97316 100%);
@@ -606,6 +669,22 @@
                     </div>
                     <input type="text" id="remove_pages" class="input-field" placeholder="Pages to delete">
                 </div>
+            </div>
+
+            <!-- OCR Cleanup Toggle -->
+            <div>
+                <div class="section-label">OCR Text Cleanup</div>
+                <label class="ocr-toggle" for="clean_ocr">
+                    <input type="checkbox" id="clean_ocr" checked>
+                    <span class="ocr-toggle-text">
+                        <span class="ocr-toggle-title">Clean extracted text automatically</span>
+                        <span class="ocr-toggle-hint">
+                            Fixes mojibake (â€œ → "), random capitals (vaN → van),
+                            broken hyphenation (ge- makkelijk → gemakkelijk),
+                            double spaces, and starts a new line after each sentence.
+                        </span>
+                    </span>
+                </label>
             </div>
 
             <!-- Submit -->
