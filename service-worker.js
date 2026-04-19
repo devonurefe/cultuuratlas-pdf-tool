@@ -1,4 +1,4 @@
-const CACHE_NAME = 'museum-pdf-tool-v4';
+const CACHE_NAME = 'museum-pdf-tool-v8';
 
 // All assets to cache for offline use
 const ASSETS_TO_CACHE = [
@@ -11,8 +11,8 @@ const ASSETS_TO_CACHE = [
     './icons/icon-192.png',
     './icons/icon-512.png',
     // CDN Libraries
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js',
@@ -24,7 +24,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[SW] Installing v4 — caching assets...');
+            console.log('[SW] Installing v8 — caching assets...');
             return Promise.allSettled(
                 ASSETS_TO_CACHE.map(url =>
                     cache.add(url).catch(err => {
