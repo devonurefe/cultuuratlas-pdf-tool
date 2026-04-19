@@ -201,6 +201,12 @@
             background: #eff6ff;
         }
 
+        .drop-zone:focus {
+            outline: none;
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.14);
+        }
+
         .file-icon {
             width: 46px;
             height: 46px;
@@ -295,6 +301,19 @@
 
         .btn-inner svg {
             flex-shrink: 0;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .progress-bar-container {
@@ -542,7 +561,8 @@
             <!-- File Upload -->
             <div>
                 <div class="section-label">Source PDF File</div>
-                <div class="drop-zone" id="dropZone" onclick="document.getElementById('pdf_file').click()"
+                <div class="drop-zone" id="dropZone" tabindex="0" onclick="document.getElementById('pdf_file').click()"
+                    onkeydown="if(event.key==='Enter'||event.key===' ') {event.preventDefault(); document.getElementById('pdf_file').click();}"
                     ondragover="event.preventDefault(); this.classList.add('dragover')"
                     ondragleave="this.classList.remove('dragover')"
                     ondrop="event.preventDefault(); this.classList.remove('dragover'); handleFileDrop(event)">
