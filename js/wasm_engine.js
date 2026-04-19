@@ -174,19 +174,79 @@ document.addEventListener('DOMContentLoaded', () => {
         return cur;
     }
 
+    // Step 1a — Repair well-known broken multi-byte sequences.
+    // pdf.js drops bytes in the Win-1252 0x80–0x9F "hole" (these code-points
+    // are undefined in ISO-8859-1 and some PDF decoders silently discard
+    // them).  The result is a truncated UTF-8 sequence that _mojibakePass
+    // cannot repair because the bytes are physically absent.
+    //
+    // Example: bullet "•" = UTF-8 E2 80 A2. After 0x80 is dropped the
+    //          string becomes â¢ (U+00E2 U+00A2) — two perfectly legal
+    //          characters that decode cleanly but mean nothing.
+    //
+    // The map below lists every practical fragment together with the
+    // character that was originally intended.
+    const BROKEN_SEQUENCE_MAP = {
+        // ── bullets & symbols ──
+        'â¢':  '•',       // E2 80 A2 → dropped 80
+        'â£':  '•',       // occasional OCR variant
+
+        // ── dashes ──
+        'â"':  '—',       // em-dash  E2 80 94 → â + " (0x94 = ")
+        'â"':  '–',       // en-dash  E2 80 93 → â + " (0x93 = ")
+        // when 0x93/0x94 also gets dropped, only â remains — handled below
+
+        // ── single curly quotes ──
+        'â\u0018': '\u2018',  // '  left single  E2 80 98 → â + 0x18
+        'â\u0019': '\u2019',  // '  right single E2 80 99 → â + 0x19
+        'â\u2018': '\u2018',  // '  sometimes the byte survives as char
+        'â\u2019': '\u2019',
+
+        // ── double curly quotes ──
+        'â\u001C': '\u201C',  // "  left double  E2 80 9C → â + 0x1C
+        'â\u001D': '\u201D',  // "  right double E2 80 9D → â + 0x1D
+        'â\u201C': '\u201C',
+        'â\u201D': '\u201D',
+
+        // ── ellipsis ──
+        'â¦':  '…',       // E2 80 A6 → dropped 80
+
+        // ── misc ──
+        'â¬':  '€',       // E2 82 AC  (euro sign, 0x82 dropped)
+        'â°':  '‰',       // E2 80 B0  (per-mille, 0x80 dropped)
+        'â€':  '"',       // E2 80 9C/9D — 2nd byte dropped (catch-all)
+    };
+    // Build one alternation regex from the map keys, longest-first so that
+    // e.g. "â\u201C" is tried before a bare "â".
+    const _brokenKeys = Object.keys(BROKEN_SEQUENCE_MAP)
+        .sort((a, b) => b.length - a.length)
+        .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const BROKEN_SEQ_RE = new RegExp(_brokenKeys.join('|'), 'g');
+
+    function fixBrokenSequences(text) {
+        if (!text) return text;
+        return text.replace(BROKEN_SEQ_RE, m => BROKEN_SEQUENCE_MAP[m] || m);
+    }
+
     // Step 1b — Some PDF text streams have already lost the trailing bytes
     // of curly-quote / dash mojibake (Win-1252 codepoints 0x80, 0x9C, 0x9D
     // are undefined and pdf.js sometimes drops them). What survives is a
     // lone 'â' (U+00E2). Hollandaca'da 'â' karakteri pratikte hiç
     // kullanılmaz — bu yüzden tek başına geçen 'â'leri tipografik tırnağa
     // çeviriyoruz. Always runs, even if no other mojibake markers exist.
+    //
+    // Updated: prefer SINGLE curly quotes (' ') which are far more common
+    // in Dutch typographic convention than double quotes.  Lines like
+    //   de 'Bellebuurt'   or   in de jaren '50
+    // use single quotes almost exclusively.  The rare double-quote case
+    // is already handled by fixBrokenSequences above.
     function stripStrayMojibakeArtefacts(text) {
         if (!text || text.indexOf('â') < 0) return text;
         let out = text;
-        // letter followed by 'â' (end of quoted phrase) → closing "
-        out = out.replace(/([A-Za-zÀ-ÿ0-9.,;:!?])â/g, '$1\u201D');
-        // 'â' followed by a letter or digit → opening "
-        out = out.replace(/â(?=[A-Za-zÀ-ÿ0-9])/g, '\u201C');
+        // letter/digit/punctuation followed by 'â' → closing single quote '
+        out = out.replace(/([A-Za-zÀ-ÿ0-9.,;:!?])â/g, '$1\u2019');
+        // 'â' followed by a letter or digit → opening single quote '
+        out = out.replace(/â(?=[A-Za-zÀ-ÿ0-9])/g, '\u2018');
         // any remaining lone 'â' surrounded by whitespace / line ends → drop
         out = out.replace(/(^|\s)â(?=\s|$)/g, '$1');
         return out;
@@ -270,6 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function cleanOcrText(text) {
         if (!text) return text;
         let out = fixMojibake(text);
+        out = fixBrokenSequences(out);
         out = stripStrayMojibakeArtefacts(out);
         out = fixLigatures(out);
         out = fixHyphenation(out);
@@ -373,8 +434,8 @@ document.addEventListener('DOMContentLoaded', () => {
         logProgress("System initialized...");
 
         try {
-            const year = document.getElementById('year').value;
-            const number = document.getElementById('number').value;
+            const year = document.getElementById('year').value.replace(/[^a-zA-Z0-9]/g, '');
+            const number = document.getElementById('number').value.replace(/[^a-zA-Z0-9]/g, '');
             const pRangesStr = document.getElementById('article_ranges').value;
             const pMergeStr = document.getElementById('merge_ranges').value;
             const pRemoveStr = document.getElementById('remove_pages').value;

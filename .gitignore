@@ -1,0 +1,10 @@
+# Test PDFs — do not deploy
+*.pdf
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node test artifacts
+_test/
+node_modules/
