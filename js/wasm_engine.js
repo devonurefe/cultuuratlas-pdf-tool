@@ -365,18 +365,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let pageText = "";
             let lastY = null;
+            let lastX = null;
+            let lastW = null;
             for (const item of textContent.items) {
                 const str = item.str;
                 if (str === undefined || str === null) continue;
+                const x = item.transform ? item.transform[4] : null;
                 const y = item.transform ? item.transform[5] : null;
 
-                if (lastY !== null && y !== null && Math.abs(y - lastY) > 1) {
+                if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) {
                     if (pageText && !pageText.endsWith('\n')) pageText += '\n';
-                } else if (pageText && !/\s$/.test(pageText) && !/^\s/.test(str)) {
-                    pageText += ' ';
+                } else if (lastX !== null && lastW !== null && x !== null) {
+                    const gap = x - (lastX + lastW);
+                    const fontSize = item.transform ? Math.abs(item.transform[0]) : 10; // usually scaleX/font size
+                    // If the gap is larger than ~20% of the font size, and there's no space already, inject one
+                    if (gap > fontSize * 0.20 && pageText && !/\s$/.test(pageText) && !/^\s/.test(str)) {
+                        pageText += ' ';
+                    }
                 }
                 pageText += str;
+                lastX = x;
                 lastY = y;
+                lastW = item.width || 0;
             }
             fullText += pageText + "\n\n";
         }
