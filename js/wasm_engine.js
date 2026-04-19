@@ -129,7 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
         0x02DC: 0x98, 0x2122: 0x99, 0x0161: 0x9A, 0x203A: 0x9B,
         0x0153: 0x9C, 0x017E: 0x9E, 0x0178: 0x9F
     };
-    const MOJIBAKE_MARKERS = /Â|Ã.|â€|â‚¬|Å“|Å¡|Å¾|Æ’/g;
+    // NOTE: do NOT add the /g flag here. RegExp.test() with /g is stateful
+    // (it advances .lastIndex between calls) and produces inconsistent
+    // results when the same regex is reused — which is exactly what would
+    // happen across many .txt extractions in a row. We only need a presence
+    // check, so a non-global regex is the right shape.
+    const MOJIBAKE_MARKERS = /Â|Ã.|â€|â‚¬|Å“|Å¡|Å¾|Æ’/;
+    const MOJIBAKE_MARKERS_G = /Â|Ã.|â€|â‚¬|Å“|Å¡|Å¾|Æ’/g;
 
     function _mojibakePass(text) {
         const bytes = [];
@@ -157,8 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let cur = text;
         for (let i = 0; i < 3; i++) {
             const next = _mojibakePass(cur);
-            const before = (cur.match(MOJIBAKE_MARKERS) || []).length;
-            const after = (next.match(MOJIBAKE_MARKERS) || []).length;
+            const before = (cur.match(MOJIBAKE_MARKERS_G) || []).length;
+            const after = (next.match(MOJIBAKE_MARKERS_G) || []).length;
             if (after < before) {
                 cur = next;
             } else {
@@ -166,6 +172,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         return cur;
+    }
+
+    // Step 1b — Some PDF text streams have already lost the trailing bytes
+    // of curly-quote / dash mojibake (Win-1252 codepoints 0x80, 0x9C, 0x9D
+    // are undefined and pdf.js sometimes drops them). What survives is a
+    // lone 'â' (U+00E2). Hollandaca'da 'â' karakteri pratikte hiç
+    // kullanılmaz — bu yüzden tek başına geçen 'â'leri tipografik tırnağa
+    // çeviriyoruz. Always runs, even if no other mojibake markers exist.
+    function stripStrayMojibakeArtefacts(text) {
+        if (!text || text.indexOf('â') < 0) return text;
+        let out = text;
+        // letter followed by 'â' (end of quoted phrase) → closing "
+        out = out.replace(/([A-Za-zÀ-ÿ0-9.,;:!?])â/g, '$1\u201D');
+        // 'â' followed by a letter or digit → opening "
+        out = out.replace(/â(?=[A-Za-zÀ-ÿ0-9])/g, '\u201C');
+        // any remaining lone 'â' surrounded by whitespace / line ends → drop
+        out = out.replace(/(^|\s)â(?=\s|$)/g, '$1');
+        return out;
     }
 
     // Step 2 — Normalise common Latin ligatures and stray PDF artefacts
@@ -246,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function cleanOcrText(text) {
         if (!text) return text;
         let out = fixMojibake(text);
+        out = stripStrayMojibakeArtefacts(out);
         out = fixLigatures(out);
         out = fixHyphenation(out);
         out = fixInnerCaps(out);
@@ -268,8 +293,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Extract Text natively (matches the original Python PyPDF2 logic).
     // Uses the Y-coordinate of each text item (transform[5]) to detect line
     // breaks, since pdf.js does not expose `hasEOL` consistently across
-    // versions.
-    async function extractTextFromPdf(pdfBytes, { clean = true } = {}) {
+    // versions. Output is always run through cleanOcrText().
+    async function extractTextFromPdf(pdfBytes) {
         const loadingTask = pdfjsLib.getDocument({ data: copyBytes(pdfBytes) });
         const pdf = await loadingTask.promise;
         let fullText = "";
@@ -294,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             fullText += pageText + "\n\n";
         }
-        return clean ? cleanOcrText(fullText) : fullText;
+        return cleanOcrText(fullText);
     }
 
     // PDF.js Render Page as Image (Matches Python PIL dimensions)
@@ -353,8 +378,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const pRangesStr = document.getElementById('article_ranges').value;
             const pMergeStr = document.getElementById('merge_ranges').value;
             const pRemoveStr = document.getElementById('remove_pages').value;
-            const cleanOcrCheckbox = document.getElementById('clean_ocr');
-            const cleanOcr = cleanOcrCheckbox ? cleanOcrCheckbox.checked : true;
 
             // Parsers
             let articleRanges = parseRanges(pRangesStr, totalPdfPages);
@@ -394,8 +417,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 zip.file(`output${year}${number}/small/${baseName}.jpg`, small, { base64: true });
                 zip.file(`output${year}${number}/large/${baseName}.jpg`, large, { base64: true });
 
-                logProgress(`  -> Extracting text from PDF${cleanOcr ? ' (with OCR cleanup)' : ''}...`);
-                const extractedText = await extractTextFromPdf(newPdfBytes, { clean: cleanOcr });
+                logProgress(`  -> Extracting and cleaning text from PDF...`);
+                const extractedText = await extractTextFromPdf(newPdfBytes);
                 zip.file(`output${year}${number}/ocr/${baseName}.txt`, extractedText);
             }
 
