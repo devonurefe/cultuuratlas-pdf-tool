@@ -378,8 +378,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (lastX !== null && lastW !== null && x !== null) {
                     const gap = x - (lastX + lastW);
                     const fontSize = item.transform ? Math.abs(item.transform[0]) : 10; // usually scaleX/font size
-                    // If the gap is larger than ~20% of the font size, and there's no space already, inject one
-                    if (gap > fontSize * 0.20 && pageText && !/\s$/.test(pageText) && !/^\s/.test(str)) {
+                    // If the gap is larger than ~30% of the font size (standard space is ~25-33%), and there's no space already, inject one
+                    if (gap > fontSize * 0.30 && pageText && !/\s$/.test(pageText) && !/^\s/.test(str)) {
                         pageText += ' ';
                     }
                 }
