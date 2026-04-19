@@ -277,9 +277,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const LC = 'a-zàáâãäåæçèéêëìíîïñòóôõöøùúûüýÿœß';
     const UC = 'A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸŒ';
     function fixHyphenation(text) {
-        const re = new RegExp(`([${LC}])-[\\u00A0 \\t]*\\n[\\u00A0 \\t]*([${LC}])`, 'g');
+        // Exclude Dutch omission dashes (weglatingsstreepje) followed by coordinating conjunctions
+        const re = new RegExp(`([${LC}])-[\\u00A0 \\t]*\\n[\\u00A0 \\t]*(?!(?:en|of|tot)\\b)([${LC}])`, 'g');
         let out = text.replace(re, '$1$2');
-        const inline = new RegExp(`([${LC}])-[\\u00A0 \\t]+([${LC}])`, 'g');
+        const inline = new RegExp(`([${LC}])-[\\u00A0 \\t]+(?!(?:en|of|tot)\\b)([${LC}])`, 'g');
         out = out.replace(inline, '$1$2');
         return out;
     }
@@ -339,6 +340,8 @@ document.addEventListener('DOMContentLoaded', () => {
         out = newlineAfterSentence(out);
         out = out.replace(/[ \t]+$/gm, '');
         out = out.replace(/\n{3,}/g, '\n\n');
+        out = out.replace(/''/g, '"'); // Fix double single-quotes representing a double quote
+        out = out.replace(/[\u00B4\u0301`]/g, "'"); // Fix acute accents misused as single quotes ('́ons huiś')
         return out.trim() + '\n';
     }
 
