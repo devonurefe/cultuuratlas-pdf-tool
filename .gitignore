@@ -8,3 +8,5 @@ Thumbs.db
 # Node test artifacts
 _test/
 node_modules/
+scratch/
+pdf/
