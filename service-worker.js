@@ -1,4 +1,4 @@
-const CACHE_NAME = 'museum-pdf-tool-v11';
+const CACHE_NAME = 'museum-pdf-tool-v12';
 
 // All assets to cache for offline use
 const ASSETS_TO_CACHE = [
