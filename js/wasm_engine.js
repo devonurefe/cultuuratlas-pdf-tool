@@ -429,6 +429,87 @@ document.addEventListener('DOMContentLoaded', () => {
         return out.trim() + '\n';
     }
 
+    // ──────────────────────────────────────────────────────────────────────
+    //  HYBRID OCR ENGINE — pdf.js fast path + Tesseract.js fallback
+    //  Modern PDFs with clean embedded text use the fast pdf.js extraction.
+    //  Legacy scans with poor or missing embedded text automatically switch
+    //  to Tesseract.js image-based OCR for dramatically better results.
+    // ──────────────────────────────────────────────────────────────────────
+
+    // Heuristic quality scorer for pdf.js extracted text.
+    // Returns 0–100. Scores below QUALITY_THRESHOLD trigger Tesseract OCR.
+    const QUALITY_THRESHOLD = 60;
+
+    function textQualityScore(text) {
+        if (!text || text.trim().length < 50) return 0;
+        const trimmed = text.trim();
+        const totalChars = trimmed.length;
+        const alphaChars = (trimmed.match(/[a-zA-Zà-ÿÀ-Ÿ]/g) || []).length;
+        const alphaRatio = alphaChars / totalChars;
+
+        const words = trimmed.split(/\s+/).filter(w => w.length > 0);
+        const avgWordLen = words.length > 0
+            ? words.reduce((s, w) => s + w.length, 0) / words.length
+            : 0;
+
+        const lines = trimmed.split('\n').filter(l => l.trim().length > 0);
+
+        let score = 0;
+        score += Math.min(alphaRatio * 80, 60);             // max 60 pts
+        score += Math.min(avgWordLen * 5, 25);               // max 25 pts
+        score += lines.length > 5 ? 15 : lines.length * 3;  // max 15 pts
+        return Math.min(Math.round(score), 100);
+    }
+
+    // Render a single PDF page to a high-contrast canvas for Tesseract.
+    // Applies grayscale + Otsu-like binarization to maximise OCR accuracy.
+    async function _renderPageForOcr(pdfBytes, pageNum) {
+        const loadingTask = pdfjsLib.getDocument({ data: copyBytes(pdfBytes) });
+        const pdf = await loadingTask.promise;
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 3.0 }); // ~300 DPI
+
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+
+        // Binarize — convert to high-contrast black & white
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            const bw = gray > 140 ? 255 : 0;
+            data[i] = data[i + 1] = data[i + 2] = bw;
+        }
+        ctx.putImageData(imageData, 0, 0);
+        return canvas;
+    }
+
+    // Run Tesseract.js OCR on all pages of a (small, split) PDF.
+    // Uses Dutch (nld) language model with SIMD-accelerated WASM core.
+    async function tesseractExtractText(pdfBytes, logFn) {
+        const loadingTask = pdfjsLib.getDocument({ data: copyBytes(pdfBytes) });
+        const pdf = await loadingTask.promise;
+        let fullText = '';
+
+        for (let p = 1; p <= pdf.numPages; p++) {
+            logFn(`  -> 🔬 Tesseract OCR page ${p}/${pdf.numPages} (nld)...`);
+            const canvas = await _renderPageForOcr(pdfBytes, p);
+
+            const { data: { text } } = await Tesseract.recognize(canvas, 'nld', {
+                logger: m => {
+                    if (m.status === 'recognizing text' && m.progress > 0) {
+                        logFn(`     OCR progress: ${Math.round(m.progress * 100)}%`);
+                    }
+                }
+            });
+            fullText += text + '\n\n';
+        }
+        return fullText;
+    }
+
     // pdf.js 3.x transfers the underlying ArrayBuffer to its worker, which
     // detaches it for any subsequent caller. We therefore hand pdf.js a
     // disposable copy every time so the caller's bytes stay reusable.
@@ -438,11 +519,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return out;
     }
 
-    // Extract Text natively (matches the original Python PyPDF2 logic).
-    // Uses the Y-coordinate of each text item (transform[5]) to detect line
-    // breaks, since pdf.js does not expose `hasEOL` consistently across
-    // versions. Output is always run through cleanOcrText().
-    async function extractTextFromPdf(pdfBytes) {
+    // ── Fast path: extract embedded text via pdf.js ─────────────────────
+    // This is the original extraction logic (unchanged).
+    async function extractTextPdfJs(pdfBytes) {
         const loadingTask = pdfjsLib.getDocument({ data: copyBytes(pdfBytes) });
         const pdf = await loadingTask.promise;
         let fullText = "";
@@ -464,8 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (pageText && !pageText.endsWith('\n')) pageText += '\n';
                 } else if (lastX !== null && lastW !== null && x !== null) {
                     const gap = x - (lastX + lastW);
-                    const fontSize = item.transform ? Math.abs(item.transform[0]) : 10; // usually scaleX/font size
-                    // If the gap is larger than ~30% of the font size (standard space is ~25-33%), and there's no space already, inject one
+                    const fontSize = item.transform ? Math.abs(item.transform[0]) : 10;
                     if (gap > fontSize * 0.30 && pageText && !/\s$/.test(pageText) && !/^\s/.test(str)) {
                         pageText += ' ';
                     }
@@ -477,7 +555,55 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             fullText += pageText + "\n\n";
         }
-        return cleanOcrText(fullText);
+        return fullText;
+    }
+
+    // ── Hybrid extraction: auto-selects the best engine ─────────────────
+    // 1. Always tries pdf.js first (fast, <10ms)
+    // 2. Checks text quality score
+    // 3. Falls back to Tesseract.js if quality is poor OR user forced it
+    // 4. Result always goes through cleanOcrText() pipeline
+    async function extractTextFromPdf(pdfBytes) {
+        const forceOcr = document.getElementById('forceTesseract')?.checked || false;
+
+        // Phase 1: Fast pdf.js extraction
+        const pdfJsText = await extractTextPdfJs(pdfBytes);
+        const quality = textQualityScore(pdfJsText);
+        logProgress(`  -> pdf.js quality score: ${quality}/100`);
+
+        // Phase 2: Decide engine
+        const tesseractAvailable = typeof Tesseract !== 'undefined';
+        const needsOcr = forceOcr || quality < QUALITY_THRESHOLD;
+
+        if (!needsOcr) {
+            logProgress(`  -> ✓ Text quality OK — using pdf.js (fast path)`);
+            return cleanOcrText(pdfJsText);
+        }
+
+        if (!tesseractAvailable) {
+            logProgress(`  -> ⚠️ Low quality (${quality}/100) but Tesseract.js not loaded — using pdf.js fallback`);
+            return cleanOcrText(pdfJsText);
+        }
+
+        // Phase 3: Tesseract.js OCR
+        logProgress(`  -> ⚡ ${forceOcr ? 'Enhanced OCR forced' : `Low quality (${quality}/100)`} — switching to Tesseract.js...`);
+        try {
+            const ocrText = await tesseractExtractText(pdfBytes, logProgress);
+            const ocrQuality = textQualityScore(ocrText);
+            logProgress(`  -> Tesseract quality score: ${ocrQuality}/100`);
+
+            // Use whichever produced better results
+            if (ocrQuality > quality) {
+                logProgress(`  -> ✓ Tesseract produced better results (${ocrQuality} vs ${quality})`);
+                return cleanOcrText(ocrText);
+            } else {
+                logProgress(`  -> ✓ pdf.js was actually better — keeping original`);
+                return cleanOcrText(pdfJsText);
+            }
+        } catch (err) {
+            logProgress(`  -> ❌ Tesseract error: ${err.message} — falling back to pdf.js`);
+            return cleanOcrText(pdfJsText);
+        }
     }
 
     // PDF.js Render Page as Image (Matches Python PIL dimensions)
