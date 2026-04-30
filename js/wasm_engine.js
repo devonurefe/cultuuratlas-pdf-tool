@@ -327,6 +327,85 @@ document.addEventListener('DOMContentLoaded', () => {
         return text.replace(re, '$1$2\n');
     }
 
+    // Step 7 — Fix Unicode wide/extended characters from decorative fonts.
+    // Some PDFs use extended Latin characters (from alternative/decorative
+    // fonts) that pdf.js extracts literally instead of mapping to their
+    // visual equivalent.  In Dutch OCR context these map to common letters.
+    const UNICODE_WIDE_MAP = {
+        '\u0175': 'm',  // ŵ (w-circumflex) → m
+        '\u0174': 'M',  // Ŵ → M
+        '\u0176': 'n',  // Ŷ (Y-circumflex) → n  (Dutch context)
+        '\u0177': 'n',  // ŷ → n
+        '\u01C1': 'w',  // ǁ (lateral click) → w
+        '\u01C0': 'v',  // ǀ (dental click) → v
+        '\u010F': 'b',  // ď (d-caron) → b
+        '\u010E': 'B',  // Ď → B
+        '\u0110': 'c',  // Đ (D-stroke) → c
+        '\u0111': 'c',  // đ → c
+    };
+    const UNICODE_WIDE_RE = new RegExp(
+        '[' + Object.keys(UNICODE_WIDE_MAP).join('') + ']', 'g');
+    function fixUnicodeWideChars(text) {
+        if (!text) return text;
+        return text.replace(UNICODE_WIDE_RE, m => UNICODE_WIDE_MAP[m] || m);
+    }
+
+    // Step 8 — Fix tilde (~) used as letter substitute in OCR.
+    // In older scanned Dutch PDFs, '~' frequently replaces letters
+    // (most commonly 'w' at word boundaries).  Dutch never uses '~' in
+    // running text, so every occurrence is an artefact.
+    function fixTildeArtefact(text) {
+        if (!text || text.indexOf('~') < 0) return text;
+        let out = text;
+        // Word-initial ~ followed by a lowercase letter → 'w'
+        out = out.replace(/(^|\s)~(?=[a-zà-ÿ])/gm, '$1w');
+        // Mid-word: letter + ~ + letter → remove tilde (merge)
+        out = out.replace(/([a-zA-Zà-ÿÀ-Ÿ])~([a-zA-Zà-ÿÀ-Ÿ])/g, '$1$2');
+        // Lone ~ at line start followed by punctuation/uppercase → remove
+        out = out.replace(/^~(?=[.A-ZÀ-Ÿ])/gm, '');
+        // Remaining lone tildes between whitespace → remove
+        out = out.replace(/(^|\s)~(\s|$)/gm, '$1$2');
+        return out;
+    }
+
+    // Step 9 — Fix 'lii' → 'w' and 'Ill' → 'W' OCR misrecognition.
+    // In some scanned PDFs the letter 'w' is misread as 'lii' (lowercase)
+    // or 'Ill' (uppercase).  This is a font-specific OCR artefact.
+    function fixLiiWPattern(text) {
+        if (!text) return text;
+        let out = text;
+        // 'lii' at word start followed by lowercase → 'w'
+        out = out.replace(/\blii(?=[a-zà-ÿ])/g, 'w');
+        // 'Ill' followed by lowercase (excluding e/i/u to preserve
+        // valid words like Illustratie, Illegaal, Illusie)
+        out = out.replace(/\bIll(?=[a-df-hj-tv-zà-ÿ])/g, 'W');
+        return out;
+    }
+
+    // Step 10 — Fix middle dot (·) between digits → hyphen.
+    // OCR sometimes reads hyphens in phone numbers as middle dots.
+    function fixMiddleDot(text) {
+        if (!text) return text;
+        return text.replace(/(\d)\u00B7(\d)/g, '$1-$2');
+    }
+
+    // Step 11 — Remove garbage lines produced by OCR on images/logos.
+    // Lines with very low letter ratio AND high special-char ratio are
+    // almost certainly OCR noise from images, logos or decorative elements.
+    function removeGarbageLines(text) {
+        if (!text) return text;
+        return text.split('\n').filter(line => {
+            const t = line.trim();
+            if (t.length <= 5) return true;       // keep short/empty lines
+            const alpha = (t.match(/[a-zA-Zà-ÿÀ-Ÿ]/g) || []).length;
+            const special = (t.match(/[~;:{}()\[\]|\\<>@#$%^&*=+\/'"!?]/g) || []).length;
+            // Garbage: <25 % letters AND >30 % special chars
+            if (t.length > 10 && alpha / t.length < 0.25 && special / t.length > 0.3)
+                return false;
+            return true;
+        }).join('\n');
+    }
+
     // Master pipeline.
     function cleanOcrText(text) {
         if (!text) return text;
@@ -334,14 +413,19 @@ document.addEventListener('DOMContentLoaded', () => {
         out = fixBrokenSequences(out);
         out = stripStrayMojibakeArtefacts(out);
         out = fixLigatures(out);
+        out = fixUnicodeWideChars(out);   // Step 7: decorative font chars
+        out = fixTildeArtefact(out);      // Step 8: ~ → w / remove
+        out = fixLiiWPattern(out);        // Step 9: lii→w, Ill→W
         out = fixHyphenation(out);
         out = fixInnerCaps(out);
         out = collapseSpaces(out);
         out = newlineAfterSentence(out);
+        out = fixMiddleDot(out);          // Step 10: · → - in numbers
         out = out.replace(/[ \t]+$/gm, '');
         out = out.replace(/\n{3,}/g, '\n\n');
         out = out.replace(/''/g, '"'); // Fix double single-quotes representing a double quote
         out = out.replace(/[\u00B4\u0301`]/g, "'"); // Fix acute accents misused as single quotes ('́ons huiś')
+        out = removeGarbageLines(out);    // Step 11: remove image/logo noise
         return out.trim() + '\n';
     }
 
