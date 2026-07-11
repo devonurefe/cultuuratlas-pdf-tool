@@ -11,6 +11,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ea580c">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
@@ -38,6 +39,11 @@
         html,
         body {
             overflow-x: hidden;
+        }
+
+        /* Utility: hide elements until JS reveals them (terminal log, result box) */
+        .hidden {
+            display: none !important;
         }
 
         body {
@@ -203,7 +209,7 @@
             background: #eff6ff;
         }
 
-        .drop-zone:focus {
+        .drop-zone:focus-visible {
             outline: none;
             border-color: #f97316;
             box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.14);
@@ -599,11 +605,11 @@
             <div class="two-col">
                 <div>
                     <div class="section-label">Year</div>
-                    <input type="text" id="year" class="input-field" placeholder="e.g. 2024" required>
+                    <input type="text" id="year" class="input-field" placeholder="e.g. 2024" inputmode="numeric" required>
                 </div>
                 <div>
                     <div class="section-label">Issue Number</div>
-                    <input type="text" id="number" class="input-field" placeholder="e.g. 05" required>
+                    <input type="text" id="number" class="input-field" placeholder="e.g. 05" inputmode="numeric" required>
                 </div>
             </div>
 
@@ -733,8 +739,10 @@
             document.getElementById('darkToggle').textContent = isDark ? '☀️' : '🌙';
             localStorage.setItem('museumDark', isDark ? '1' : '0');
         }
-        // Restore preference on load
-        if (localStorage.getItem('museumDark') === '1') {
+        // Restore preference on load — fall back to the OS/browser theme on first visit
+        const savedDark = localStorage.getItem('museumDark');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedDark === '1' || (savedDark === null && prefersDark)) {
             document.body.classList.add('dark');
             document.getElementById('darkToggle').textContent = '☀️';
         }
