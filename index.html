@@ -49,8 +49,8 @@
         body {
             font-family: 'Nunito', sans-serif;
             min-height: 100vh;
-            background-color: #111827;
-            background-image: radial-gradient(circle at 10px 10px, rgba(255, 255, 255, 0.05) 2px, transparent 0);
+            background-color: #fff7ed;
+            background-image: radial-gradient(circle at 10px 10px, rgba(194, 65, 12, 0.07) 2px, transparent 0);
             background-size: 24px 24px;
             display: flex;
             align-items: center;
@@ -61,14 +61,14 @@
         .card {
             background: #ffffff;
             border-radius: 28px;
-            box-shadow: 0 40px 80px -16px rgba(234, 88, 12, 0.18), 0 0 0 1px rgba(234, 88, 12, 0.08);
+            box-shadow: 0 24px 60px -20px rgba(194, 65, 12, 0.22), 0 4px 16px -6px rgba(124, 45, 18, 0.08);
             max-width: 640px;
             width: 100%;
             overflow: hidden;
         }
 
         .header-gradient {
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #172554 100%);
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 45%, #9a3412 100%);
             padding: 28px 32px 24px;
             position: relative;
             overflow: hidden;
@@ -81,7 +81,7 @@
             right: -50px;
             width: 200px;
             height: 200px;
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.10);
             border-radius: 50%;
         }
 
@@ -92,14 +92,14 @@
             left: -20px;
             width: 220px;
             height: 220px;
-            background: rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.06);
             border-radius: 50%;
         }
 
         .badge {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #bfdbfe;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #ffedd5;
             font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.05em;
@@ -142,7 +142,7 @@
         .section-label {
             font-size: 11px;
             font-weight: 800;
-            color: #1e40af;
+            color: #57534e;
             letter-spacing: 0.1em;
             text-transform: uppercase;
             margin-bottom: 8px;
@@ -150,29 +150,29 @@
 
         .hint {
             font-size: 11px;
-            color: #64748b;
+            color: #78716c;
         }
 
         .card-footer {
             text-align: center;
             padding: 14px 32px 18px;
-            border-top: 1px solid #f1f5f9;
+            border-top: 1px solid #f5f5f4;
             font-size: 11.5px;
-            color: #64748b;
+            color: #78716c;
             font-weight: 500;
             letter-spacing: 0.02em;
         }
 
         .card-footer strong {
-            color: #1e3a8a;
+            color: #c2410c;
             font-weight: 700;
         }
 
         .input-field {
             width: 100%;
             padding: 11px 14px;
-            border: 1.5px solid #cbd5e1;
-            background: #f8fafc;
+            border: 1.5px solid #d6d3d1;
+            background: #fafaf9;
             border-radius: 12px;
             font-size: 14px;
             color: #1c1917;
@@ -188,12 +188,12 @@
         }
 
         .input-field::placeholder {
-            color: #94a3b8;
+            color: #a8a29e;
         }
 
         .drop-zone {
-            border: 2px dashed #93c5fd;
-            background: #f0fdfa;
+            border: 2px dashed #fdba74;
+            background: #fff7ed;
             border-radius: 16px;
             padding: 20px;
             cursor: pointer;
@@ -205,8 +205,8 @@
 
         .drop-zone:hover,
         .drop-zone.dragover {
-            border-color: #3b82f6;
-            background: #eff6ff;
+            border-color: #ea580c;
+            background: #ffedd5;
         }
 
         .drop-zone:focus-visible {
@@ -230,8 +230,8 @@
             margin-left: auto;
             flex-shrink: 0;
             background: #fff;
-            border: 1.5px solid #93c5fd;
-            color: #1d4ed8;
+            border: 1.5px solid #fdba74;
+            color: #c2410c;
             font-weight: 700;
             font-size: 12px;
             padding: 7px 14px;
@@ -242,8 +242,8 @@
         }
 
         .browse-btn:hover {
-            background: #eff6ff;
-            border-color: #3b82f6;
+            background: #fff7ed;
+            border-color: #ea580c;
         }
 
         input[type="file"] {
@@ -264,7 +264,7 @@
 
         .divider {
             height: 1px;
-            background: linear-gradient(to right, transparent, #e2e8f0 30%, #e2e8f0 70%, transparent);
+            background: linear-gradient(to right, transparent, #e7e5e4 30%, #e7e5e4 70%, transparent);
         }
 
         .process-btn {
@@ -396,8 +396,8 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            border: 1.5px solid #fed7aa;
-            background: rgba(255, 255, 255, 0.8);
+            border: 1.5px solid #fdba74;
+            background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(8px);
             cursor: pointer;
             font-size: 18px;
@@ -406,12 +406,12 @@
             justify-content: center;
             z-index: 100;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 14px rgba(194, 65, 12, 0.14);
         }
 
         .dark-toggle:hover {
             transform: scale(1.1);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 6px 18px rgba(194, 65, 12, 0.2);
         }
 
         /* Dark Mode Overrides */
@@ -552,16 +552,16 @@
                 <h1 style="font-size:26px; font-weight:800; color:#ffffff; letter-spacing:-0.02em; line-height:1.2;">
                     Museum PDF Tool
                 </h1>
-                <p style="color:#bfdbfe; font-size:13px; margin-top:6px; font-weight:500;">
+                <p style="color:#ffedd5; font-size:13px; margin-top:6px; font-weight:500;">
                     Split, merge &amp; archive magazine PDFs &mdash; entirely in your browser
                 </p>
                 <div style="margin-top:14px; position:relative; z-index:1; text-align:center;">
                     <a href="guide.html" target="_blank"
-                        style="color:#f97316; font-size:14px; font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:6px;"
-                        onmouseover="this.style.color='#ea580c'" onmouseout="this.style.color='#f97316'">
+                        style="color:#ffffff; font-size:14px; font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:6px;"
+                        onmouseover="this.style.color='#ffedd5'" onmouseout="this.style.color='#ffffff'">
                         📖 User Guide
                     </a>
-                    <div style="color:#93c5fd; font-size:11.5px; font-weight:500; margin-top:8px; opacity:0.8;">
+                    <div style="color:#ffedd5; font-size:11.5px; font-weight:500; margin-top:8px; opacity:0.85;">
                         🔒 Files never leave your device
                     </div>
                 </div>
@@ -701,7 +701,7 @@
 
         <div class="card-footer">
             Museum PDF Tool <strong>v2.0</strong> &nbsp;&middot;&nbsp; Powered by <strong>h2O</strong>
-            <div class="love-line" style="margin-top:6px; font-size:10.5px; color:#94a3b8;">
+            <div class="love-line" style="margin-top:6px; font-size:10.5px; color:#a8a29e;">
                 Made with ❤️ for the community
             </div>
         </div>
