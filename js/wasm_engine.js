@@ -363,6 +363,21 @@ document.addEventListener('DOMContentLoaded', () => {
             '$1.$2');
     }
 
+    // Step 6a2 — Split sentences glued together without a space
+    // ("tom Poes.Vele jaren later"): lowercase + [.!?] + capitalized word.
+    // The lowercase-before-punct guard keeps initials and B.V. intact; the
+    // token check keeps e-mail addresses and URLs untouched.
+    function splitGluedSentences(text) {
+        const re = new RegExp(`([${LC}])([.!?])(["“”'’)]?)([${UC}][${LC}])`, 'g');
+        return text.replace(re, (m, a, p, q, b, off, s) => {
+            const ws = Math.max(s.lastIndexOf(' ', off), s.lastIndexOf('\n', off),
+                s.lastIndexOf('\t', off));
+            const token = s.slice(ws + 1, off + 1);
+            if (token.includes('@') || /^www\./i.test(token) || token.includes('://')) return m;
+            return a + p + q + '\n' + b;
+        });
+    }
+
     // Step 6b — Re-capitalize sentence starts. Old small-caps display fonts
     // store everything as lowercase in the PDF text layer, so extracted text
     // reads "hij sprak daar. de verhuizing was klaar." A lowercase letter
@@ -489,6 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
         out = fixInnerCaps(out);
         out = collapseSpaces(out);
         out = joinWrappedAddresses(out);  // Step 6a: gmail.\ncom → gmail.com
+        out = splitGluedSentences(out);   // Step 6a2: Poes.Vele → Poes.\nVele
         // Capitalize first, so sentences it repairs also get their own line
         // from newlineAfterSentence (which only fires before uppercase).
         out = capitalizeSentenceStarts(out); // Step 6b: small-caps fonts lose capitals
@@ -679,7 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!tesseractAvailable) {
             logProgress(`  -> ⚠️ Low quality (${quality}/100) but Tesseract.js not loaded — using pdf.js fallback`);
-            return cleanOcrText(pdfJsText);
+            return withEmptyTextNotice(cleanOcrText(pdfJsText));
         }
 
         // Phase 3: Tesseract.js OCR
@@ -699,8 +715,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             logProgress(`  -> ❌ Tesseract error: ${err.message} — falling back to pdf.js`);
-            return cleanOcrText(pdfJsText);
+            return withEmptyTextNotice(cleanOcrText(pdfJsText));
         }
+    }
+
+    // Legacy scans often have NO embedded text layer at all — pdf.js then
+    // returns (nearly) nothing and the .txt in the ZIP comes out empty,
+    // which looks like a tool failure. Say why, and what to do about it.
+    function withEmptyTextNotice(text) {
+        if (text && text.trim().length >= 30) return text;
+        logProgress('  -> ⚠️ Geen tekstlaag in deze pagina\'s — zie de notitie in het .txt-bestand');
+        return '[Geen tekstlaag gevonden — deze pagina\'s zijn een pure scan (afbeelding).\n' +
+            ' Vink "Enhanced OCR (Tesseract.js)" aan en zorg voor een internetverbinding,\n' +
+            ' verwerk het bestand daarna opnieuw om de tekst alsnog te herkennen.]\n';
     }
 
     // PDF.js Render Page as Image (Matches Python PIL dimensions)
