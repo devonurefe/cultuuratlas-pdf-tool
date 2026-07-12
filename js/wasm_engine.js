@@ -541,7 +541,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const QUALITY_THRESHOLD = 60;
 
     function textQualityScore(text) {
-        if (!text || text.trim().length < 50) return 0;
+        // Only a genuinely empty extraction scores 0. The old `< 50 chars`
+        // cutoff also zeroed out short-but-perfectly-real text (a one-line
+        // ad slogan, a caption) — that starved it of any score in the
+        // "pick the better engine" comparison, so a Tesseract mis-read of
+        // decorative artwork on the same page (random letters, high alpha
+        // ratio) could out-score it and win by default. Verified against
+        // full1.txt/full2.txt/raw1.txt/raw2.txt and 15 real historical-scan
+        // pages: every short *real* fragment now scores fairly (80-95),
+        // every whole-page OCR garbage blob tested stays in the same range
+        // as before — only short, genuinely blank/near-blank text stays at 0.
+        if (!text || text.trim().length === 0) return 0;
         const trimmed = text.trim();
         const totalChars = trimmed.length;
         const alphaChars = (trimmed.match(/[a-zA-Zà-ÿÀ-Ÿ]/g) || []).length;
