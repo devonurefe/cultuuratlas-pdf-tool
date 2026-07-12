@@ -473,6 +473,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return text.replace(/(\d)\u00B7(\d)/g, '$1-$2');
     }
 
+    // Step 10b \u2014 Fix century-abbreviation OCR misreads before the word
+    // "eeuw(s)" (century): lowercase 'l' misread for digit '1' (l7e -> 17e),
+    // and '9' misread as 'g' (1ge -> 19e). Scoped tightly to this exact
+    // shape immediately before "eeuw" \u2014 real words like "Leeuw", "Zeeuws"
+    // and "middeleeuws" never match, so this can't misfire on them.
+    function fixCenturyOcr(text) {
+        if (!text) return text;
+        let out = text.replace(/\bl(\d)e(\s*eeuw(?:se|s)?\b)/g, '1$1e$2');
+        out = out.replace(/\b1ge(\s*eeuw(?:se|s)?\b)/g, '19e$1');
+        return out;
+    }
+
     // Step 11 — Remove garbage lines produced by OCR on images/logos.
     // Lines with very low letter ratio AND high special-char ratio are
     // almost certainly OCR noise from images, logos or decorative elements.
@@ -521,6 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
         out = capitalizeSentenceStarts(out); // Step 6b: small-caps fonts lose capitals
         out = newlineAfterSentence(out);
         out = fixMiddleDot(out);          // Step 10: · → - in numbers
+        out = fixCenturyOcr(out);         // Step 10b: l7e/1ge eeuw → 17e/19e eeuw
         out = out.replace(/[ \t]+$/gm, '');
         out = out.replace(/\n{3,}/g, '\n\n');
         out = out.replace(/''/g, '"'); // Fix double single-quotes representing a double quote
