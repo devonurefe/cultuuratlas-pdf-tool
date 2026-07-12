@@ -137,29 +137,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const MOJIBAKE_MARKERS = /Â|Ã.|â€|â‚¬|Å“|Å¡|Å¾|Æ’/;
     const MOJIBAKE_MARKERS_G = /Â|Ã.|â€|â‚¬|Å“|Å¡|Å¾|Æ’/g;
 
+    // A mojibake cluster is the Win-1252 display of a UTF-8 lead byte
+    // (0xC2–0xF4 → Â…ß, à…ï, ð…ô) followed by the right number of
+    // continuation-byte displays (0x80–0xBF → €‚ƒ…, NBSP–¿, or raw C1
+    // controls). Decoding ONLY such clusters — instead of round-tripping
+    // the whole string through cp1252 bytes — keeps already-correct smart
+    // characters intact: a standalone ” or ’ also has a cp1252 byte form,
+    // and the old whole-string rebuild turned those into invalid UTF-8 →
+    // U+FFFD → silently deleted by the ligature step. (That is exactly how
+    // closing quotes vanished from mixed mojibake/clean text.)
+    const MOJI_CONT =
+        '\\u0080-\\u00BF\\u20AC\\u201A\\u0192\\u201E\\u2026\\u2020\\u2021' +
+        '\\u02C6\\u2030\\u0160\\u2039\\u0152\\u017D\\u2018\\u2019\\u201C' +
+        '\\u201D\\u2022\\u2013\\u2014\\u02DC\\u2122\\u0161\\u203A\\u0153' +
+        '\\u017E\\u0178';
+    const MOJI_CLUSTER_RE = new RegExp(
+        '[\\u00C2-\\u00DF][' + MOJI_CONT + ']' +
+        '|[\\u00E0-\\u00EF][' + MOJI_CONT + ']{2}' +
+        '|[\\u00F0-\\u00F4][' + MOJI_CONT + ']{3}', 'g');
+
     function _mojibakePass(text) {
-        const bytes = [];
-        for (let i = 0; i < text.length; i++) {
-            const code = text.charCodeAt(i);
-            if (code <= 0xFF) {
-                bytes.push(code);
-            } else if (WIN1252_REVERSE[code] !== undefined) {
-                bytes.push(WIN1252_REVERSE[code]);
-            } else {
-                const utf8 = new TextEncoder().encode(text[i]);
-                for (const b of utf8) bytes.push(b);
+        return text.replace(MOJI_CLUSTER_RE, (cluster) => {
+            const bytes = [];
+            for (const ch of cluster) {
+                const code = ch.charCodeAt(0);
+                bytes.push(code <= 0xFF ? code : WIN1252_REVERSE[code]);
             }
-        }
-        try {
-            return new TextDecoder('utf-8', { fatal: false })
-                .decode(new Uint8Array(bytes));
-        } catch (e) {
-            return text;
-        }
+            try {
+                return new TextDecoder('utf-8', { fatal: true })
+                    .decode(new Uint8Array(bytes));
+            } catch (e) {
+                return cluster; // not a real UTF-8 sequence — leave untouched
+            }
+        });
     }
+
+    // A bare 'â€' with its third byte missing: U+201D (”) is E2 80 9D and
+    // 0x9D is undefined in Win-1252, so PDF decoders often drop it, leaving
+    // 'â€' with nothing after it. The byte rebuild below would then produce
+    // an invalid UTF-8 sequence → U+FFFD → the closing quote silently
+    // disappears from the output. Repair it up front; when the next char
+    // belongs to the Win-1252 0x80–0xBF display set the sequence is complete
+    // (e.g. 'â€œ') and must be left for the normal rebuild.
+    const TRUNCATED_CLOSE_QUOTE_RE = new RegExp(
+        '\u00E2\u20AC' + // 'a-circumflex + euro' = the two surviving mojibake chars
+        '(?![' + MOJI_CONT + '])', 'g');
 
     function fixMojibake(text) {
         if (!text || !MOJIBAKE_MARKERS.test(text)) return text;
+        text = text.replace(TRUNCATED_CLOSE_QUOTE_RE, '”');
         let cur = text;
         for (let i = 0; i < 3; i++) {
             const next = _mojibakePass(cur);
@@ -327,6 +353,49 @@ document.addEventListener('DOMContentLoaded', () => {
         return text.replace(re, '$1$2\n');
     }
 
+    // Step 6a — Re-join e-mail addresses and URLs that the PDF line-wrapped
+    // right at the TLD ("vosholkroniek@gmail.\ncom"). Only fires when an @
+    // or www. appears in the token before the break, so ordinary sentences
+    // can never match ("de" is both a TLD and a Dutch word).
+    function joinWrappedAddresses(text) {
+        return text.replace(
+            /((?:@|www\.)[A-Za-z0-9.-]*)\.\n(com|net|org|nl|be|de|eu|info)(?=[.\s,;:]|$)/g,
+            '$1.$2');
+    }
+
+    // Step 6b — Re-capitalize sentence starts. Old small-caps display fonts
+    // store everything as lowercase in the PDF text layer, so extracted text
+    // reads "hij sprak daar. de verhuizing was klaar." A lowercase letter
+    // after sentence-ending punctuation is near-certain wrong in Dutch.
+    // Guards: the word before a '.' must not be a known abbreviation, a
+    // single letter (initials "B.", spelled-out "o.a.") or contain a digit
+    // ("nr.5"-style tokens), so those never trigger a false capital.
+    const DUTCH_ABBREVS = new Set([
+        'bijv', 'blz', 'pag', 'afb', 'fig', 'nr', 'no', 'tel', 'fax', 'ca',
+        'plm', 'resp', 'evt', 'incl', 'excl', 'jl', 'zgn', 'dhr', 'mevr',
+        'mw', 'dr', 'drs', 'ing', 'ir', 'mr', 'prof', 'jr', 'sr', 'st',
+        'red', 'ned', 'gem', 'afd', 'enz', 'etc', 'vgl', 'geb', 'ovl',
+        'overl', 'getr', 'ged', 'begr', 'wed', 'jhr', 'fam', 'gebr'
+    ]);
+    function capitalizeSentenceStarts(text) {
+        // The gap must contain at least one whitespace char — otherwise the
+        // rule would fire inside e-mail addresses and URLs (gmail.com).
+        const re = new RegExp(
+            `([${LC}${UC}0-9]+)([.!?])((?:[\\u00A0 \\t]+\\n?|\\n)[\\u00A0 \\t]*)(ij|[${LC}])`, 'g');
+        return text.replace(re, (m, word, punct, gap, ch) => {
+            if (punct === '.') {
+                if (word.length === 1) return m;
+                if (/[0-9]/.test(word)) {
+                    // allow years/counts ("in 1950. de oorlog…") but skip
+                    // mixed tokens that are really abbreviated references
+                    if (!/^[0-9]+$/.test(word)) return m;
+                }
+                if (DUTCH_ABBREVS.has(word.toLowerCase())) return m;
+            }
+            return word + punct + gap + ch.toLocaleUpperCase('nl');
+        });
+    }
+
     // Step 7 — Fix Unicode wide/extended characters from decorative fonts.
     // Some PDFs use extended Latin characters (from alternative/decorative
     // fonts) that pdf.js extracts literally instead of mapping to their
@@ -419,6 +488,10 @@ document.addEventListener('DOMContentLoaded', () => {
         out = fixHyphenation(out);
         out = fixInnerCaps(out);
         out = collapseSpaces(out);
+        out = joinWrappedAddresses(out);  // Step 6a: gmail.\ncom → gmail.com
+        // Capitalize first, so sentences it repairs also get their own line
+        // from newlineAfterSentence (which only fires before uppercase).
+        out = capitalizeSentenceStarts(out); // Step 6b: small-caps fonts lose capitals
         out = newlineAfterSentence(out);
         out = fixMiddleDot(out);          // Step 10: · → - in numbers
         out = out.replace(/[ \t]+$/gm, '');
@@ -475,12 +548,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const ctx = canvas.getContext('2d');
         await page.render({ canvasContext: ctx, viewport }).promise;
 
-        // Binarize — convert to high-contrast black & white
+        // Binarize with a real Otsu threshold computed from the page's own
+        // gray histogram. A fixed cutoff (the old 140) fails on yellowed or
+        // faded scans whose text/background split sits far from any fixed
+        // value; Otsu picks the split that maximizes between-class variance.
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
-        for (let i = 0; i < data.length; i += 4) {
-            const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-            const bw = gray > 140 ? 255 : 0;
+        const grays = new Uint8Array(data.length / 4);
+        const hist = new Uint32Array(256);
+        for (let i = 0, g = 0; i < data.length; i += 4, g++) {
+            const gray = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) | 0;
+            grays[g] = gray;
+            hist[gray]++;
+        }
+        const total = grays.length;
+        let sumAll = 0;
+        for (let t = 0; t < 256; t++) sumAll += t * hist[t];
+        let sumB = 0, wB = 0, maxVar = 0, threshold = 140; // 140 = old fixed fallback
+        for (let t = 0; t < 256; t++) {
+            wB += hist[t];
+            if (wB === 0) continue;
+            const wF = total - wB;
+            if (wF === 0) break;
+            sumB += t * hist[t];
+            const mB = sumB / wB;
+            const mF = (sumAll - sumB) / wF;
+            const between = wB * wF * (mB - mF) * (mB - mF);
+            if (between > maxVar) { maxVar = between; threshold = t; }
+        }
+        for (let i = 0, g = 0; i < data.length; i += 4, g++) {
+            const bw = grays[g] > threshold ? 255 : 0;
             data[i] = data[i + 1] = data[i + 2] = bw;
         }
         ctx.putImageData(imageData, 0, 0);
@@ -703,7 +800,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 logProgress(`  -> Extracting and cleaning text from PDF...`);
                 const extractedText = await extractTextFromPdf(newPdfBytes);
-                zip.file(`output${year}${number}/ocr/${baseName}.txt`, extractedText);
+                // UTF-8 BOM so Windows editors (Notepad, Word) detect the
+                // encoding — without it curly quotes render as "â€œ" there.
+                zip.file(`output${year}${number}/ocr/${baseName}.txt`, '\uFEFF' + extractedText);
             }
 
             progressBar.style.width = '80%';
