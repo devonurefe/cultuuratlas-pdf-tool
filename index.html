@@ -174,7 +174,12 @@
             border: 1.5px solid #d6d3d1;
             background: #fafaf9;
             border-radius: 12px;
-            font-size: 14px;
+            /* 16px, not smaller: iOS Safari auto-zooms the whole page on
+               focus of any text input under 16px, then zooms back out on
+               blur — tapping between Year/Issue/Ranges fields on a phone
+               reads as the page "shifting". 16px is the documented safe
+               floor that disables that behavior. */
+            font-size: 16px;
             color: #1c1917;
             font-family: 'Nunito', sans-serif;
             transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
