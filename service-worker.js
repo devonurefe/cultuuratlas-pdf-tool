@@ -1,4 +1,4 @@
-const CACHE_NAME = 'museum-pdf-tool-v20';
+const CACHE_NAME = 'museum-pdf-tool-v21';
 
 // All assets to cache for offline use
 const ASSETS_TO_CACHE = [
@@ -26,7 +26,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[SW] Installing v20 — caching assets...');
+            console.log('[SW] Installing v21 — caching assets...');
             return Promise.allSettled(
                 ASSETS_TO_CACHE.map(url =>
                     cache.add(url).catch(err => {
