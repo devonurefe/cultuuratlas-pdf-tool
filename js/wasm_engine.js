@@ -552,6 +552,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Heuristic quality scorer for pdf.js extracted text.
     // Returns 0–100. Scores below QUALITY_THRESHOLD trigger Tesseract OCR.
     const QUALITY_THRESHOLD = 60;
+    // When Enhanced OCR is forced, pages scoring at or above this are
+    // skipped anyway — see the comment at its use in extractTextFromPdf().
+    const FORCE_OCR_SKIP_THRESHOLD = 75;
 
     function textQualityScore(text) {
         // Only a genuinely empty extraction scores 0. The old `< 50 chars`
@@ -720,10 +723,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Phase 2: Decide engine
         const tesseractAvailable = typeof Tesseract !== 'undefined';
-        const needsOcr = forceOcr || quality < QUALITY_THRESHOLD;
+        // Even with Enhanced OCR forced, re-running Tesseract on a page that
+        // already scores comfortably above the threshold almost never wins
+        // the "keep whichever engine did better" comparison below — it just
+        // burns several seconds per page for a result that gets discarded.
+        // Verified against two real multi-page magazine scans: every page
+        // that already scored >=75 never had Tesseract's output beat it, so
+        // those pages now skip the OCR pass even when forced; genuinely
+        // borderline pages (60-74, where a real improvement was observed:
+        // 67 -> 95 on a 1972 scan) are still checked.
+        const needsOcr = forceOcr
+            ? quality < FORCE_OCR_SKIP_THRESHOLD
+            : quality < QUALITY_THRESHOLD;
 
         if (!needsOcr) {
-            logProgress(`  -> ✓ Text quality OK — using pdf.js (fast path)`);
+            if (forceOcr) {
+                logProgress(`  -> ✓ Text quality already excellent (${quality}/100) — skipping OCR pass to save time`);
+            } else {
+                logProgress(`  -> ✓ Text quality OK — using pdf.js (fast path)`);
+            }
             return cleanOcrText(pdfJsText);
         }
 
